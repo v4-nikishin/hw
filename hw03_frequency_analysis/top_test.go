@@ -49,6 +49,39 @@ func TestTop10(t *testing.T) {
 	})
 
 	t.Run("positive test", func(t *testing.T) {
+		expected := []string{
+			"aaa", // 1
+		}
+		require.Equal(t, expected, Top10("aaa"))
+	})
+
+	t.Run("positive test", func(t *testing.T) {
+		expected := []string{
+			"aaa", // 1
+			"bbb", // 1
+		}
+		require.Equal(t, expected, Top10("bbb aaa"))
+	})
+
+	t.Run("positive test", func(t *testing.T) {
+		expected := []string{
+			"bbb", // 2
+			"aaa", // 1
+		}
+		require.Equal(t, expected, Top10("bbb bbb aaa"))
+	})
+
+	t.Run("positive test", func(t *testing.T) {
+		expected := []string{
+			"ccc", // 3
+			"bbb", // 2
+			"qqq", // 2
+			"aaa", // 1
+		}
+		require.Equal(t, expected, Top10("bbb bbb aaa ccc ccc ccc qqq qqq"))
+	})
+
+	t.Run("positive test", func(t *testing.T) {
 		if taskWithAsteriskIsCompleted {
 			expected := []string{
 				"а",         // 8
