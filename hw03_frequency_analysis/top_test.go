@@ -48,14 +48,14 @@ func TestTop10(t *testing.T) {
 		require.Len(t, Top10(""), 0)
 	})
 
-	t.Run("positive test", func(t *testing.T) {
+	t.Run("one lexeme", func(t *testing.T) {
 		expected := []string{
 			"aaa", // 1
 		}
 		require.Equal(t, expected, Top10("aaa"))
 	})
 
-	t.Run("positive test", func(t *testing.T) {
+	t.Run("two different lexemes", func(t *testing.T) {
 		expected := []string{
 			"aaa", // 1
 			"bbb", // 1
@@ -63,7 +63,7 @@ func TestTop10(t *testing.T) {
 		require.Equal(t, expected, Top10("bbb aaa"))
 	})
 
-	t.Run("positive test", func(t *testing.T) {
+	t.Run("unordered lexemes with different frequency", func(t *testing.T) {
 		expected := []string{
 			"bbb", // 2
 			"aaa", // 1
@@ -71,7 +71,7 @@ func TestTop10(t *testing.T) {
 		require.Equal(t, expected, Top10("bbb bbb aaa"))
 	})
 
-	t.Run("positive test", func(t *testing.T) {
+	t.Run("different lexemes with the same frequency", func(t *testing.T) {
 		expected := []string{
 			"ccc", // 3
 			"bbb", // 2
