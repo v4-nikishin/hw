@@ -37,7 +37,9 @@ func Top10(t string) []string {
 	var start int
 	for i, k := range sk {
 		if i != 0 && prev != mp[k] {
-			sort.Strings(sk[start:i])
+			if i-start > 1 {
+				sort.Strings(sk[start:i])
+			}
 			start = i
 		}
 		prev = mp[k]
