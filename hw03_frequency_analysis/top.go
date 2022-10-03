@@ -20,31 +20,17 @@ func Top10(t string) []string {
 	for key := range mp {
 		keys = append(keys, key)
 	}
-	sort.SliceStable(keys, func(i, j int) bool {
+
+	sort.Slice(keys, func(i, j int) bool {
+		if mp[keys[i]] == mp[keys[j]] {
+			return keys[i] < keys[j]
+		}
 		return mp[keys[i]] > mp[keys[j]]
 	})
 
-	var sk []string
-	n := 10
-	for i := 0; i < len(keys); i++ {
-		sk = append(sk, keys[i])
-		if i >= n-1 {
-			break
-		}
+	top := 10
+	if len(keys) < top {
+		top = len(keys)
 	}
-
-	var prev int
-	var start int
-	for i, k := range sk {
-		if i != 0 && prev != mp[k] {
-			if i-start > 1 {
-				sort.Strings(sk[start:i])
-			}
-			start = i
-		}
-		prev = mp[k]
-	}
-	sort.Strings(sk[start:])
-
-	return sk
+	return keys[:top]
 }
