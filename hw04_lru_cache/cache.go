@@ -20,10 +20,15 @@ type cacheItem struct {
 }
 
 func (c *lruCache) Clear() {
-	if element := c.queue.Back(); element != nil {
-		c.queue.Remove(element)
-		item := element.Value.(*cacheItem)
-		delete(c.items, item.key)
+	for {
+		if element := c.queue.Back(); element != nil {
+			c.queue.Remove(element)
+			item := element.Value.(*cacheItem)
+			delete(c.items, item.key)
+		}
+		if c.queue.Front() == nil {
+			break
+		}
 	}
 }
 
@@ -35,7 +40,11 @@ func (c *lruCache) Set(key Key, value interface{}) bool {
 	}
 
 	if c.queue.Len() == c.capacity {
-		c.Clear()
+		if element := c.queue.Back(); element != nil {
+			c.queue.Remove(element)
+			item := element.Value.(*cacheItem)
+			delete(c.items, item.key)
+		}
 	}
 
 	item := &cacheItem{

@@ -77,6 +77,15 @@ func TestCache(t *testing.T) {
 		// [qqq, ccc, ddd]
 		_, ok = c.Get("bbb")
 		require.False(t, ok)
+
+		c.Clear()
+		// [qqq, ccc, ddd]
+		_, ok = c.Get("qqq")
+		require.False(t, ok)
+		_, ok = c.Get("ccc")
+		require.False(t, ok)
+		_, ok = c.Get("ddd")
+		require.False(t, ok)
 	})
 }
 
