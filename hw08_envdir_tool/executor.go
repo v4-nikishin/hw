@@ -38,7 +38,7 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 	proc.Stderr = os.Stderr
 	if err := proc.Run(); err != nil {
 		fmt.Println(err)
-		returnCode = Err
+		returnCode = proc.ProcessState.ExitCode()
 	}
 	return
 }

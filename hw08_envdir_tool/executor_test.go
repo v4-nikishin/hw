@@ -13,6 +13,6 @@ func TestRunCmd(t *testing.T) {
 	})
 	t.Run("invalid cmd", func(t *testing.T) {
 		ret := RunCmd([]string{"qqq"}, nil)
-		require.Equal(t, ret, 1)
+		require.Equal(t, ret, -1)
 	})
 }

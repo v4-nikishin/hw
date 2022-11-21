@@ -16,7 +16,5 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	if ret := RunCmd(args[2:], m); ret != Success {
-		fmt.Println("Failed to run command. Error: ", ret)
-	}
+	os.Exit(RunCmd(args[2:], m))
 }
