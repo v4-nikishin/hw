@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"bytes"
 	"fmt"
 	"os"
 	"strings"
@@ -16,14 +15,13 @@ type EnvValue struct {
 	NeedRemove bool
 }
 
-func getValue(b []byte) string {
-	b = bytes.ReplaceAll(b, []byte{0x00}, []byte{0x0A})
-	v := string(b)
-	if strings.Contains(v, "=") {
+func getValue(oldV string) string {
+	if strings.Contains(oldV, "=") {
 		return ""
 	}
-	v = strings.TrimRight(v, " ")
-	return v
+	newV := strings.ReplaceAll(oldV, string("\x00"), string("\x0A"))
+	newV = strings.TrimRight(newV, " ")
+	return newV
 }
 
 // ReadDir reads a specified directory and returns map of env variables.
@@ -61,7 +59,7 @@ func ReadDir(dir string) (Environment, error) {
 
 		scanner := bufio.NewScanner(f)
 		for scanner.Scan() {
-			v := getValue(scanner.Bytes())
+			v := getValue(scanner.Text())
 			_, ok := os.LookupEnv(fileName)
 			env[fileName] = EnvValue{Value: v, NeedRemove: ok}
 			break

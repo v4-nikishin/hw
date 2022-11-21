@@ -7,13 +7,13 @@ import (
 )
 
 const (
-	Seccess = 0
+	Success = 0
 	Err     = 1
 )
 
 // RunCmd runs a command + arguments (cmd) with environment variables from env.
 func RunCmd(cmd []string, env Environment) (returnCode int) {
-	returnCode = Seccess
+	returnCode = Success
 
 	if len(cmd) == 0 {
 		fmt.Println("Command is empty")
@@ -33,6 +33,7 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 		os.Setenv(k, v.Value)
 	}
 	proc.Env = os.Environ()
+	proc.Stdin = os.Stdin
 	proc.Stdout = os.Stdout
 	proc.Stderr = os.Stderr
 	if err := proc.Run(); err != nil {
