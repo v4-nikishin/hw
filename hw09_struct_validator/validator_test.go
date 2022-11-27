@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 type UserRole string
@@ -34,6 +36,11 @@ type (
 		Code int    `validate:"in:200,404,500"`
 		Body string `json:"omitempty"`
 	}
+
+	Slicies struct {
+		Code []int    `validate:"in:200,404,500"`
+		Body []string `validate:"len:5"`
+	}
 )
 
 func TestValidate(t *testing.T) {
@@ -42,10 +49,32 @@ func TestValidate(t *testing.T) {
 		expectedErr error
 	}{
 		{
-			// Place your code here.
+			in:          App{Version: "12345"},
+			expectedErr: nil,
 		},
-		// ...
-		// Place your code here.
+		{
+			in:          Response{Code: 200, Body: "qqq"},
+			expectedErr: nil,
+		},
+		{
+			in:          Token{},
+			expectedErr: nil,
+		},
+		{
+			in: User{
+				ID:     "qwertyuiopasdfghjklzxcvbnm1234567890",
+				Name:   "QQQ",
+				Age:    35,
+				Email:  "qqq@mail.ru",
+				Role:   "admin",
+				Phones: []string{"12345678901", "09876543210"},
+			},
+			expectedErr: nil,
+		},
+		{
+			in:          Slicies{Code: []int{200, 500}, Body: []string{"qqqQQ", "12345"}},
+			expectedErr: nil,
+		},
 	}
 
 	for i, tt := range tests {
@@ -53,8 +82,8 @@ func TestValidate(t *testing.T) {
 			tt := tt
 			t.Parallel()
 
-			// Place your code here.
-			_ = tt
+			err := Validate(tt.in)
+			require.Equal(t, err, tt.expectedErr)
 		})
 	}
 }
