@@ -23,53 +23,72 @@ func (v ValidationErrors) Error() string {
 	return errStr
 }
 
-func validate(k, v string, rule string) (bool, ValidationError, error) {
+func validate(k, v string, rule string) (bool, ValidationErrors, error) {
 	rs := strings.Split(rule, "|")
+	ves := make(ValidationErrors, 0, len(rs))
+	var ok bool
+	var customErr ValidationError
+	var err error
 	for _, rv := range rs {
-		r := strings.Split(rv, ":")
-		if len(r) < 2 {
-			return false, ValidationError{}, fmt.Errorf("incorrect validation rule: %s", rule)
+		ok, customErr, err = doValidate(k, v, rv)
+		if ok {
+			continue
 		}
-		switch r[0] {
-		case "len":
-			var n int
-			fmt.Sscan(r[1], &n)
-			if len(v) != n {
-				return false, ValidationError{Field: k, Err: fmt.Errorf("incorrect string size")}, nil
-			}
-		case "in":
-			if !strings.Contains(r[1], v) {
-				return false, ValidationError{Field: k, Err: fmt.Errorf("value %s is not in %s", v, r[1])}, nil
-			}
-		case "min":
-			min, err := strconv.Atoi(r[1])
-			if err != nil {
-				return false, ValidationError{}, fmt.Errorf("bad value type")
-			}
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return false, ValidationError{}, fmt.Errorf("bad value type")
-			}
-			if val < min {
-				return false, ValidationError{Field: k, Err: fmt.Errorf("value %d is less than min %d", val, min)}, nil
-			}
-		case "max":
-			max, err := strconv.Atoi(r[1])
-			if err != nil {
-				return false, ValidationError{}, fmt.Errorf("bad value type")
-			}
-			val, err := strconv.Atoi(v)
-			if err != nil {
-				return false, ValidationError{}, fmt.Errorf("bad value type")
-			}
-			if val > max {
-				return false, ValidationError{Field: k, Err: fmt.Errorf("value %d is more than max %d", val, max)}, nil
-			}
-		case "regexp":
-			reg, _ := regexp.Compile(r[1])
-			if !reg.MatchString(v) {
-				return false, ValidationError{Field: k, Err: fmt.Errorf("value %s does not match format %s", v, r[1])}, nil
-			}
+		if err != nil {
+			return false, ValidationErrors{}, err
+		}
+		ves = append(ves, customErr)
+	}
+	if len(ves) > 0 {
+		return false, ves, nil
+	}
+	return ok, ValidationErrors{}, err
+}
+
+func doValidate(k, v string, rule string) (bool, ValidationError, error) {
+	r := strings.Split(rule, ":")
+	if len(r) < 2 {
+		return false, ValidationError{}, fmt.Errorf("incorrect validation rule: %s", rule)
+	}
+	switch r[0] {
+	case "len":
+		var n int
+		fmt.Sscan(r[1], &n)
+		if len(v) != n {
+			return false, ValidationError{Field: k, Err: fmt.Errorf("incorrect string size")}, nil
+		}
+	case "in":
+		if !strings.Contains(r[1], v) {
+			return false, ValidationError{Field: k, Err: fmt.Errorf("value %s is not in %s", v, r[1])}, nil
+		}
+	case "min":
+		min, err := strconv.Atoi(r[1])
+		if err != nil {
+			return false, ValidationError{}, fmt.Errorf("bad value type")
+		}
+		val, err := strconv.Atoi(v)
+		if err != nil {
+			return false, ValidationError{}, fmt.Errorf("bad value type")
+		}
+		if val < min {
+			return false, ValidationError{Field: k, Err: fmt.Errorf("value %d is less than min %d", val, min)}, nil
+		}
+	case "max":
+		max, err := strconv.Atoi(r[1])
+		if err != nil {
+			return false, ValidationError{}, fmt.Errorf("bad value type")
+		}
+		val, err := strconv.Atoi(v)
+		if err != nil {
+			return false, ValidationError{}, fmt.Errorf("bad value type")
+		}
+		if val > max {
+			return false, ValidationError{Field: k, Err: fmt.Errorf("value %d is more than max %d", val, max)}, nil
+		}
+	case "regexp":
+		reg, _ := regexp.Compile(r[1])
+		if !reg.MatchString(v) {
+			return false, ValidationError{Field: k, Err: fmt.Errorf("value %s does not match format %s", v, r[1])}, nil
 		}
 	}
 	return true, ValidationError{}, nil
@@ -80,20 +99,20 @@ func validateSlice(fieldName string, sv reflect.Value, rule string) (bool, Valid
 	for i := 0; i < sv.Len(); i++ {
 		var strValue string
 		v := sv.Index(i)
-		switch v.Kind() {
+		switch v.Kind() { //nolint:exhaustive
 		case reflect.String:
 			strValue = v.String()
 		case reflect.Int:
 			strValue = strconv.Itoa(int(v.Int()))
 		}
-		ok, customErr, err := validate(fieldName+"["+strconv.Itoa(i)+"]", strValue, rule)
+		ok, customErrs, err := validate(fieldName+"["+strconv.Itoa(i)+"]", strValue, rule)
 		if ok {
 			continue
 		}
 		if err != nil {
 			return false, ValidationErrors{}, err
 		}
-		ves = append(ves, customErr)
+		ves = append(ves, customErrs...)
 	}
 	if len(ves) > 0 {
 		return false, ves, nil
@@ -119,7 +138,7 @@ func Validate(iv interface{}) error {
 		}
 		var strValue string
 		fv := v.Field(i)
-		switch field.Type.Kind() {
+		switch field.Type.Kind() { //nolint:exhaustive
 		case reflect.String:
 			strValue = fv.String()
 		case reflect.Int:
@@ -139,14 +158,14 @@ func Validate(iv interface{}) error {
 
 			continue
 		}
-		ok, customErr, err := validate(field.Name, strValue, tagValue)
+		ok, customErrs, err := validate(field.Name, strValue, tagValue)
 		if ok {
 			continue
 		}
 		if err != nil {
 			return err
 		}
-		ves = append(ves, customErr)
+		ves = append(ves, customErrs...)
 	}
 	if len(ves) > 0 {
 		return fmt.Errorf(ves.Error())

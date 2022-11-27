@@ -68,6 +68,7 @@ func TestValidate(t *testing.T) {
 				Email:  "qqq@mail.ru",
 				Role:   "admin",
 				Phones: []string{"12345678901", "09876543210"},
+				meta:   json.RawMessage{},
 			},
 			expectedErr: nil,
 		},
