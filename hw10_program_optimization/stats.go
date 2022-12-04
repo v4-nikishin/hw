@@ -37,7 +37,7 @@ func countDomains(r io.Reader, domain string) (DomainStat, error) {
 		}
 		if strings.Contains(user.Email, domain) {
 			k := strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])
-			res[k] = res[k] + 1
+			res[k]++
 		}
 	}
 	if err := scanner.Err(); err != nil {
