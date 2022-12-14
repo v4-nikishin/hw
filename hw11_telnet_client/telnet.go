@@ -66,7 +66,10 @@ func (tc *TelnetClientStruct) scan(scanner *bufio.Scanner, writer io.Writer) err
 			return fmt.Errorf("finished by context done")
 		default:
 			if !scanner.Scan() {
-				return nil
+				if scanner.Err() != nil {
+					return scanner.Err()
+				}
+				return io.EOF
 			}
 			text := scanner.Text()
 			if _, err := writer.Write([]byte(fmt.Sprintf("%s\n", text))); err != nil {

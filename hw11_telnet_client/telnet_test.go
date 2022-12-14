@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,10 +36,14 @@ func TestTelnetClient(t *testing.T) {
 
 			in.WriteString("hello\n")
 			err = client.Send()
-			require.NoError(t, err)
+			if assert.Error(t, err) {
+				assert.Equal(t, io.EOF, err)
+			}
 
 			err = client.Receive()
-			require.NoError(t, err)
+			if assert.Error(t, err) {
+				assert.Equal(t, io.EOF, err)
+			}
 			require.Equal(t, "world\n", out.String())
 		}()
 

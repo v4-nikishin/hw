@@ -1,10 +1,14 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -15,6 +19,16 @@ func init() {
 }
 
 func main() {
+	sigchnl := make(chan os.Signal, 1)
+	signal.Notify(sigchnl)
+
+	go func() {
+		for {
+			s := <-sigchnl
+			handler(s)
+		}
+	}()
+
 	flag.Parse()
 
 	var address string
@@ -45,17 +59,27 @@ func main() {
 	go func() {
 		defer wg.Done()
 		if err := client.Receive(); err != nil {
-			fmt.Printf("Failed to receive: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Failed to receive: %v\n", err)
 		}
 	}()
 
 	go func() {
 		defer wg.Done()
 		if err := client.Send(); err != nil {
-			fmt.Printf("Failed to send: %v\n", err)
+			if errors.Is(err, io.EOF) {
+				client.Close()
+			}
 		}
 	}()
 
 	wg.Wait()
 	fmt.Fprintln(os.Stderr, "...Connection was closed by peer")
+}
+
+func handler(signal os.Signal) {
+	if signal == syscall.SIGINT {
+		fmt.Println("Got CTRL+C signal")
+		fmt.Println("Closing.")
+		os.Exit(0)
+	}
 }
