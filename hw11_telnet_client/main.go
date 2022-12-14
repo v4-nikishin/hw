@@ -22,13 +22,6 @@ func main() {
 	sigchnl := make(chan os.Signal, 1)
 	signal.Notify(sigchnl)
 
-	go func() {
-		for {
-			s := <-sigchnl
-			handler(s)
-		}
-	}()
-
 	flag.Parse()
 
 	var address string
@@ -72,14 +65,18 @@ func main() {
 		}
 	}()
 
+	go func() {
+		for {
+			s := <-sigchnl
+			if s == syscall.SIGINT {
+				fmt.Println("Got CTRL+C signal")
+				fmt.Println("Closing.")
+				client.Close()
+				os.Exit(0)
+			}
+		}
+	}()
+
 	wg.Wait()
 	fmt.Fprintln(os.Stderr, "...Connection was closed by peer")
-}
-
-func handler(signal os.Signal) {
-	if signal == syscall.SIGINT {
-		fmt.Println("Got CTRL+C signal")
-		fmt.Println("Closing.")
-		os.Exit(0)
-	}
 }
