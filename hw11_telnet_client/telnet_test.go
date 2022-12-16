@@ -2,12 +2,13 @@ package main
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -29,16 +30,20 @@ func TestTelnetClient(t *testing.T) {
 			timeout, err := time.ParseDuration("10s")
 			require.NoError(t, err)
 
-			client := NewTelnetClient(l.Addr().String(), timeout, ioutil.NopCloser(in), out)
+			client := NewTelnetClient(l.Addr().String(), timeout, io.NopCloser(in), out)
 			require.NoError(t, client.Connect())
 			defer func() { require.NoError(t, client.Close()) }()
 
 			in.WriteString("hello\n")
 			err = client.Send()
-			require.NoError(t, err)
+			if assert.Error(t, err) {
+				assert.Equal(t, io.EOF, err)
+			}
 
 			err = client.Receive()
-			require.NoError(t, err)
+			if assert.Error(t, err) {
+				assert.Equal(t, io.EOF, err)
+			}
 			require.Equal(t, "world\n", out.String())
 		}()
 
