@@ -13,7 +13,9 @@ import (
 	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/config"
 	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/logger"
 	internalhttp "github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/server/http"
+	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/storage"
 	memorystorage "github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/storage/memory"
+	sqlstorage "github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/storage/sql"
 )
 
 var configFile string
@@ -40,8 +42,13 @@ func main() {
 	logg.Info("config: " + configFile)
 	logg.Info("config.Logger.Level: " + cfg.Logger.Level)
 
-	storage := memorystorage.New()
-	calendar := app.New(logg, storage)
+	var repo app.Storage
+	if cfg.DB.Type == string(storage.DBTypeSQL) {
+		repo = sqlstorage.New()
+	} else {
+		repo = memorystorage.New()
+	}
+	calendar := app.New(logg, repo)
 
 	server := internalhttp.NewServer(cfg.Server, logg, calendar)
 

@@ -11,14 +11,14 @@ import (
 )
 
 type Server struct {
-	cfg config.ServerConfig
+	cfg config.ServerConf
 	log *logger.Logger
 }
 
 type Application interface { // TODO
 }
 
-func NewServer(cfg config.ServerConfig, logger *logger.Logger, app Application) *Server {
+func NewServer(cfg config.ServerConf, logger *logger.Logger, app Application) *Server {
 	return &Server{cfg: cfg, log: logger}
 }
 

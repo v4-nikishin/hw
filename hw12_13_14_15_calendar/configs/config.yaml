@@ -1,6 +1,7 @@
 log:
   level: info
-
 server:
   host: localhost
   port: 8080
+database:
+  type: memory

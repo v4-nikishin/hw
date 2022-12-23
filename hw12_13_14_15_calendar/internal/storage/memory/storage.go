@@ -15,10 +15,11 @@ func New() *Storage {
 	return &Storage{events: make(map[string]*storage.Event)}
 }
 
-func (s *Storage) CreateEvent(e storage.Event) {
+func (s *Storage) CreateEvent(e storage.Event) error {
 	s.mu.RLock()
 	s.events[e.ID] = &e
 	s.mu.RUnlock()
+	return nil
 }
 
 func (s *Storage) GetEvent(id string) (storage.Event, bool) {
@@ -38,10 +39,11 @@ func (s *Storage) UpdateEvent(id string, title string) bool {
 	return ok
 }
 
-func (s *Storage) DeleteEvent(id string) {
+func (s *Storage) DeleteEvent(id string) error {
 	s.mu.RLock()
 	delete(s.events, id)
 	s.mu.RUnlock()
+	return nil
 }
 
 func (s *Storage) Events() []storage.Event {
