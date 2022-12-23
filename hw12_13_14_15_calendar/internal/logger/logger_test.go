@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/config"
 )
 
 func TestLogger(t *testing.T) {
@@ -21,7 +22,7 @@ func TestLogger(t *testing.T) {
 	})
 	t.Run("check output levels", func(t *testing.T) {
 		out := &bytes.Buffer{}
-		log := New(WarnStr, out)
+		log := New(config.LoggerConf{Level: WarnStr}, out)
 		log.Error("Error")
 		require.Contains(t, out.String(), ErrorTag)
 		log.Warn("Warn")

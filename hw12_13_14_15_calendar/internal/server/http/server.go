@@ -4,26 +4,29 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
+	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/config"
 	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/logger"
 )
 
 type Server struct {
+	cfg config.ServerConfig
 	log *logger.Logger
 }
 
 type Application interface { // TODO
 }
 
-func NewServer(logger *logger.Logger, app Application) *Server {
-	return &Server{log: logger}
+func NewServer(cfg config.ServerConfig, logger *logger.Logger, app Application) *Server {
+	return &Server{cfg: cfg, log: logger}
 }
 
 func (s *Server) Start(ctx context.Context) error {
+	addr := s.cfg.Host + ":" + s.cfg.Port
+	s.log.Info("server started on address: " + addr)
 	server := &http.Server{
-		Addr:         ":8080",
+		Addr:         addr,
 		Handler:      loggingMiddleware(s, s.log),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
@@ -34,7 +37,6 @@ func (s *Server) Start(ctx context.Context) error {
 
 func (s *Server) Stop(ctx context.Context) error {
 	s.log.Info("...calendar is stopped")
-	os.Exit(1)
 	return nil
 }
 

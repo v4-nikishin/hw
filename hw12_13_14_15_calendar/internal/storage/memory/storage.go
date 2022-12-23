@@ -16,40 +16,40 @@ func New() *Storage {
 }
 
 func (s *Storage) CreateEvent(e storage.Event) {
-	s.mu.Lock()
+	s.mu.RLock()
 	s.events[e.ID] = &e
-	s.mu.Unlock()
+	s.mu.RUnlock()
 }
 
 func (s *Storage) GetEvent(id string) (storage.Event, bool) {
-	s.mu.Lock()
+	s.mu.RLock()
 	e, ok := s.events[id]
-	s.mu.Unlock()
+	s.mu.RUnlock()
 	return *e, ok
 }
 
 func (s *Storage) UpdateEvent(id string, title string) bool {
-	s.mu.Lock()
+	s.mu.RLock()
 	e, ok := s.events[id]
 	if ok {
 		e.Title = title
 	}
-	s.mu.Unlock()
+	s.mu.RUnlock()
 	return ok
 }
 
 func (s *Storage) DeleteEvent(id string) {
-	s.mu.Lock()
+	s.mu.RLock()
 	delete(s.events, id)
-	s.mu.Unlock()
+	s.mu.RUnlock()
 }
 
 func (s *Storage) Events() []storage.Event {
 	events := []storage.Event{}
-	s.mu.Lock()
+	s.mu.RLock()
 	for _, e := range s.events {
 		events = append(events, *e)
 	}
-	s.mu.Unlock()
+	s.mu.RUnlock()
 	return events
 }

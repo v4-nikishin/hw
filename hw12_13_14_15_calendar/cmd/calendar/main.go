@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/app"
+	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/config"
 	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/logger"
 	internalhttp "github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/server/http"
 	memorystorage "github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/storage/memory"
@@ -29,19 +30,20 @@ func main() {
 		return
 	}
 
-	config := NewConfig()
-	if err := LoadConfigFile(&config, configFile); err != nil {
-		panic(fmt.Sprintf("Failed to configure service %s", err))
+	cfg, err := config.Load(configFile)
+	if err != nil {
+		fmt.Printf("failed to configure service %s\n", err)
+		os.Exit(1)
 	}
 
-	logg := logger.New(config.Logger.Level, os.Stdout)
+	logg := logger.New(cfg.Logger, os.Stdout)
 	logg.Info("config: " + configFile)
-	logg.Info("config.Logger.Level: " + config.Logger.Level)
+	logg.Info("config.Logger.Level: " + cfg.Logger.Level)
 
 	storage := memorystorage.New()
 	calendar := app.New(logg, storage)
 
-	server := internalhttp.NewServer(logg, calendar)
+	server := internalhttp.NewServer(cfg.Server, logg, calendar)
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
@@ -56,6 +58,7 @@ func main() {
 		if err := server.Stop(ctx); err != nil {
 			logg.Error("failed to stop http server: " + err.Error())
 		}
+		os.Exit(0)
 	}()
 
 	logg.Info("calendar is running...")

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"time"
+
+	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/config"
 )
 
 const (
@@ -50,8 +52,8 @@ type Logger struct {
 	out   io.Writer
 }
 
-func New(level string, out io.Writer) *Logger {
-	return &Logger{level: level, out: out}
+func New(cfg config.LoggerConf, out io.Writer) *Logger {
+	return &Logger{level: cfg.Level, out: out}
 }
 
 func (l Logger) Error(msg string) {
