@@ -8,7 +8,6 @@ import (
 )
 
 func TestStorage(t *testing.T) {
-	t.Skip()
 	s := New()
 	t.Run("check create", func(t *testing.T) {
 		s.CreateEvent(storage.Event{UUID: "1", Title: "1"})
