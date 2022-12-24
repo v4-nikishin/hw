@@ -22,7 +22,12 @@ type LoggerConf struct {
 }
 
 type DBConf struct {
-	Type string `yaml:"type"`
+	Type string  `yaml:"type"`
+	SQL  SQLConf `yaml:"sql"`
+}
+
+type SQLConf struct {
+	DSN string `yaml:"dsn"`
 }
 
 func NewConfig() Config {

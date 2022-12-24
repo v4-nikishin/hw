@@ -17,26 +17,26 @@ func New() *Storage {
 
 func (s *Storage) CreateEvent(e storage.Event) error {
 	s.mu.RLock()
-	s.events[e.ID] = &e
+	s.events[e.UUID] = &e
 	s.mu.RUnlock()
 	return nil
 }
 
-func (s *Storage) GetEvent(id string) (storage.Event, bool) {
+func (s *Storage) GetEvent(id string) (storage.Event, error) {
 	s.mu.RLock()
-	e, ok := s.events[id]
+	e := s.events[id]
 	s.mu.RUnlock()
-	return *e, ok
+	return *e, nil
 }
 
-func (s *Storage) UpdateEvent(id string, title string) bool {
+func (s *Storage) UpdateEvent(id string, title string) error {
 	s.mu.RLock()
 	e, ok := s.events[id]
 	if ok {
 		e.Title = title
 	}
 	s.mu.RUnlock()
-	return ok
+	return nil
 }
 
 func (s *Storage) DeleteEvent(id string) error {
@@ -46,12 +46,12 @@ func (s *Storage) DeleteEvent(id string) error {
 	return nil
 }
 
-func (s *Storage) Events() []storage.Event {
+func (s *Storage) Events() ([]storage.Event, error) {
 	events := []storage.Event{}
 	s.mu.RLock()
 	for _, e := range s.events {
 		events = append(events, *e)
 	}
 	s.mu.RUnlock()
-	return events
+	return events, nil
 }

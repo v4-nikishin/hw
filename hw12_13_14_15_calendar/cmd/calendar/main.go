@@ -42,19 +42,19 @@ func main() {
 	logg.Info("config: " + configFile)
 	logg.Info("config.Logger.Level: " + cfg.Logger.Level)
 
+	ctx, cancel := signal.NotifyContext(context.Background(),
+		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	defer cancel()
+
 	var repo app.Storage
 	if cfg.DB.Type == string(storage.DBTypeSQL) {
-		repo = sqlstorage.New()
+		repo = sqlstorage.New(ctx, cfg.DB.SQL, logg)
 	} else {
 		repo = memorystorage.New()
 	}
 	calendar := app.New(logg, repo)
 
 	server := internalhttp.NewServer(cfg.Server, logg, calendar)
-
-	ctx, cancel := signal.NotifyContext(context.Background(),
-		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-	defer cancel()
 
 	go func() {
 		<-ctx.Done()

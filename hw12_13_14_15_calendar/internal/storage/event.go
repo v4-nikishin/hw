@@ -8,7 +8,7 @@ const (
 )
 
 type Event struct {
-	ID    string
+	UUID  string
 	Title string
 	// TODO
 }

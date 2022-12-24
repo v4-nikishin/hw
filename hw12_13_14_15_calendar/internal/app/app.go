@@ -14,10 +14,10 @@ type App struct {
 
 type Storage interface {
 	CreateEvent(e storage.Event) error
-	GetEvent(id string) (storage.Event, bool)
-	UpdateEvent(id string, title string) bool
+	GetEvent(id string) (storage.Event, error)
+	UpdateEvent(id string, title string) error
 	DeleteEvent(id string) error
-	Events() []storage.Event
+	Events() ([]storage.Event, error)
 }
 
 func New(logger *logger.Logger, storage Storage) *App {
@@ -25,14 +25,14 @@ func New(logger *logger.Logger, storage Storage) *App {
 }
 
 func (a *App) CreateEvent(ctx context.Context, id, title string) error {
-	return a.storage.CreateEvent(storage.Event{ID: id, Title: title})
+	return a.storage.CreateEvent(storage.Event{UUID: id, Title: title})
 }
 
-func (a *App) GetEvent(ctx context.Context, id string) (storage.Event, bool) {
+func (a *App) GetEvent(ctx context.Context, id string) (storage.Event, error) {
 	return a.storage.GetEvent(id)
 }
 
-func (a *App) UpdateEvent(ctx context.Context, id, title string) bool {
+func (a *App) UpdateEvent(ctx context.Context, id, title string) error {
 	return a.storage.UpdateEvent(id, title)
 }
 
@@ -40,6 +40,6 @@ func (a *App) DeleteEvent(ctx context.Context, id string) error {
 	return a.storage.DeleteEvent(id)
 }
 
-func (a *App) Events() []storage.Event {
+func (a *App) Events() ([]storage.Event, error) {
 	return a.storage.Events()
 }
