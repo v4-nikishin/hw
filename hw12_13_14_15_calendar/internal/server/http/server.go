@@ -3,6 +3,7 @@ package internalhttp
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"time"
 
@@ -11,8 +12,9 @@ import (
 )
 
 type Server struct {
-	cfg config.ServerConf
-	log *logger.Logger
+	cfg    config.ServerConf
+	log    *logger.Logger
+	server *http.Server
 }
 
 type Application interface { // TODO
@@ -23,20 +25,23 @@ func NewServer(cfg config.ServerConf, logger *logger.Logger, app Application) *S
 }
 
 func (s *Server) Start(ctx context.Context) error {
-	addr := s.cfg.Host + ":" + s.cfg.Port
+	addr := net.JoinHostPort(s.cfg.Host, s.cfg.Port)
 	s.log.Info("server started on address: " + addr)
-	server := &http.Server{
+	s.server = &http.Server{
 		Addr:         addr,
 		Handler:      loggingMiddleware(s, s.log),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
-	server.ListenAndServe()
+	if err := s.server.ListenAndServe(); err != nil {
+		return err
+	}
 	return nil
 }
 
 func (s *Server) Stop(ctx context.Context) error {
 	s.log.Info("...calendar is stopped")
+	s.server.Shutdown(ctx)
 	return nil
 }
 

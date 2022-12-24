@@ -55,3 +55,6 @@ func (s *Storage) Events() ([]storage.Event, error) {
 	s.mu.RUnlock()
 	return events, nil
 }
+
+func (s *Storage) Close() {
+}

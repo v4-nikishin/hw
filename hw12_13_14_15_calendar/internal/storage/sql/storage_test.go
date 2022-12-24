@@ -12,19 +12,15 @@ import (
 )
 
 func TestStorage(t *testing.T) {
-	t.Skip()
+	// t.Skip()
 	ctx := context.Background()
 	logg := logger.New(config.LoggerConf{Level: logger.DebugStr}, os.Stdout)
-	s := New(ctx,
+	s, err := New(ctx,
 		config.SQLConf{DSN: "host=localhost port=5432 user=postgres password=postgres dbname=calendar sslmode=disable"},
 		logg)
-	t.Run("check connect", func(t *testing.T) {
-		require.NoError(t,
-			s.Connect(s.cfg.DSN))
-		defer func() {
-			require.NoError(t, s.Close())
-		}()
-	})
+	require.NoError(t, err)
+	defer s.Close()
+
 	t.Run("check insert", func(t *testing.T) {
 		err := s.CreateEvent(storage.Event{UUID: "UUID", Title: "TITLE"})
 		require.NoError(t, err)

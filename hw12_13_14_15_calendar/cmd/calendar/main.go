@@ -48,10 +48,15 @@ func main() {
 
 	var repo app.Storage
 	if cfg.DB.Type == string(storage.DBTypeSQL) {
-		repo = sqlstorage.New(ctx, cfg.DB.SQL, logg)
+		if repo, err = sqlstorage.New(ctx, cfg.DB.SQL, logg); err != nil {
+			logg.Error("failed to create sql storage: " + err.Error())
+			return
+		}
 	} else {
 		repo = memorystorage.New()
 	}
+	defer repo.Close()
+
 	calendar := app.New(logg, repo)
 
 	server := internalhttp.NewServer(cfg.Server, logg, calendar)
@@ -65,7 +70,6 @@ func main() {
 		if err := server.Stop(ctx); err != nil {
 			logg.Error("failed to stop http server: " + err.Error())
 		}
-		os.Exit(0)
 	}()
 
 	logg.Info("calendar is running...")

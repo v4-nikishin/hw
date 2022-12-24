@@ -18,6 +18,7 @@ type Storage interface {
 	UpdateEvent(id string, title string) error
 	DeleteEvent(id string) error
 	Events() ([]storage.Event, error)
+	Close()
 }
 
 func New(logger *logger.Logger, storage Storage) *App {
