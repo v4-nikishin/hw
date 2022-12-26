@@ -1,9 +1,8 @@
 package logger
 
 import (
-	"fmt"
 	"io"
-	"time"
+	"log"
 
 	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/config"
 )
@@ -19,10 +18,10 @@ const (
 	InfoStr  = "info"
 	DebugStr = "debug"
 
-	ErrorTag = "[ERROR]"
-	WarnTag  = "[WARN]"
-	InfoTag  = "[INFO]"
-	DebugTag = "[DEBUG]"
+	ErrorTag = "[ERRO] "
+	WarnTag  = "[WARN] "
+	InfoTag  = "[INFO] "
+	DebugTag = "[DEBU] "
 )
 
 func levelNum(level string) int {
@@ -39,41 +38,38 @@ func levelNum(level string) int {
 	return Error
 }
 
-func timeStamp() string {
-	return "[" + time.Now().String() + "]"
-}
-
-func tmpl(tag string, msg string) string {
-	return timeStamp() + " " + tag + " " + msg
-}
-
 type Logger struct {
+	logg  *log.Logger
 	level string
-	out   io.Writer
 }
 
 func New(cfg config.LoggerConf, out io.Writer) *Logger {
-	return &Logger{level: cfg.Level, out: out}
+	logg := log.New(out, "", log.Ldate|log.Lmsgprefix|log.Lmicroseconds)
+	return &Logger{logg: logg, level: cfg.Level}
 }
 
 func (l Logger) Error(msg string) {
-	fmt.Fprintln(l.out, tmpl(ErrorTag, msg))
+	l.logg.SetPrefix(ErrorTag)
+	l.logg.Println(msg)
 }
 
 func (l Logger) Warn(msg string) {
 	if levelNum(l.level) >= Warn {
-		fmt.Fprintln(l.out, tmpl(WarnTag, msg))
+		l.logg.SetPrefix(WarnTag)
+		l.logg.Println(msg)
 	}
 }
 
 func (l Logger) Info(msg string) {
 	if levelNum(l.level) >= Info {
-		fmt.Fprintln(l.out, tmpl(InfoTag, msg))
+		l.logg.SetPrefix(InfoTag)
+		l.logg.Println(msg)
 	}
 }
 
 func (l Logger) Debug(msg string) {
 	if levelNum(l.level) >= Debug {
-		fmt.Fprintln(l.out, tmpl(DebugTag, msg))
+		l.logg.SetPrefix(DebugTag)
+		l.logg.Println(msg)
 	}
 }
