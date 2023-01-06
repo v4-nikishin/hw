@@ -14,6 +14,10 @@ func TestStorage(t *testing.T) {
 		require.Equal(t, s.events["1"].Title, "1")
 		require.Equal(t, s.events["1"].UUID, "1")
 	})
+	t.Run("invalid get", func(t *testing.T) {
+		_, err := s.GetEvent("2")
+		require.Error(t, err)
+	})
 	t.Run("check get", func(t *testing.T) {
 		e, err := s.GetEvent("1")
 		require.Equal(t, e.Title, "1")
@@ -21,7 +25,7 @@ func TestStorage(t *testing.T) {
 		require.NoError(t, err)
 	})
 	t.Run("check update", func(t *testing.T) {
-		err := s.UpdateEvent("1", "2")
+		err := s.UpdateEvent("1", storage.Event{UUID: "1", Title: "2"})
 		require.Equal(t, s.events["1"].Title, "2")
 		require.NoError(t, err)
 	})

@@ -64,9 +64,9 @@ func (s *Storage) GetEvent(uuid string) (storage.Event, error) {
 	return e, nil
 }
 
-func (s *Storage) UpdateEvent(uuid string, title string) error {
+func (s *Storage) UpdateEvent(uuid string, e storage.Event) error {
 	query := "update events set title = $1 where uuid = $2"
-	_, err := s.db.ExecContext(s.ctx, query, title, uuid)
+	_, err := s.db.ExecContext(s.ctx, query, e.Title, uuid)
 	if err != nil {
 		return fmt.Errorf("cannot update event %w", err)
 	}

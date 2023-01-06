@@ -8,7 +8,10 @@ const (
 )
 
 type Event struct {
-	UUID  string
-	Title string
-	// TODO
+	UUID  string `json:"uuid"`
+	Title string `json:"title"`
+	User  string `json:"user"`
+	Date  string `json:"date"`
+	Begin string `json:"start"`
+	End   string `json:"end"`
 }
