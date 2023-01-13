@@ -90,6 +90,7 @@ func (s *Server) GetEvents(context.Context, *emptypb.Empty) (*pb.Events, error) 
 	}
 	qrpcEventes := pb.Events{}
 
+	//nolint:typecheck
 	for _, e := range storageEvts {
 		e := e
 		qrpcEventes.Events = append(qrpcEventes.Events, s.convertToGrpcEvent(&e))
