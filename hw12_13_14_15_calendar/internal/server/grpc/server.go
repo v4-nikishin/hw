@@ -113,12 +113,11 @@ func (s *Server) Start(ctx context.Context) error {
 	addr := net.JoinHostPort(s.cfg.Host, s.cfg.Port)
 	lsn, err := net.Listen("tcp", addr)
 	if err != nil {
-		s.log.Error("failed to start grpc server: " + err.Error())
 		return err
 	}
 	s.log.Info("starting grpc server on " + lsn.Addr().String())
 	if err := s.server.Serve(lsn); err != nil {
-		s.log.Error("failed to start grpc server: " + err.Error())
+		return err
 	}
 	return nil
 }

@@ -28,7 +28,7 @@ func (s *Storage) GetEvent(id string) (storage.Event, error) {
 	defer s.mu.RUnlock()
 	e, ok := s.events[id]
 	if !ok {
-		return storage.Event{}, fmt.Errorf("invalide event %s", id)
+		return storage.Event{}, fmt.Errorf("event not found %s", id)
 	}
 	return *e, nil
 }

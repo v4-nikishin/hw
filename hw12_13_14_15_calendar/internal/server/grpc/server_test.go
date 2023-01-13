@@ -40,15 +40,12 @@ func TestAPI(t *testing.T) {
 
 	addr := net.JoinHostPort(service.cfg.Host, service.cfg.Port)
 	lsn, err := net.Listen("tcp", addr)
-	if err != nil {
-		log.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	log.Printf("starting server on %s", lsn.Addr().String())
 	go func() {
-		if err := server.Serve(lsn); err != nil {
-			log.Fatal(err)
-		}
+		err := server.Serve(lsn)
+		require.NoError(t, err)
 	}()
 
 	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))

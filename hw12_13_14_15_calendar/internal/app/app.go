@@ -70,6 +70,14 @@ func (a *App) isBusyDatetime(e storage.Event) bool {
 		return false
 	}
 	const format = "2006-01-02 15:04:00"
+	newBegin, err := time.Parse(format, e.Date+" "+e.Begin)
+	if err != nil {
+		return false
+	}
+	newEnd, err := time.Parse(format, e.Date+" "+e.End)
+	if err != nil {
+		return false
+	}
 	for _, evt := range events {
 		if evt.Date != e.Date || evt.UUID == e.UUID {
 			continue
@@ -79,14 +87,6 @@ func (a *App) isBusyDatetime(e storage.Event) bool {
 			return false
 		}
 		end, err := time.Parse(format, evt.Date+" "+evt.End)
-		if err != nil {
-			return false
-		}
-		newBegin, err := time.Parse(format, e.Date+" "+e.Begin)
-		if err != nil {
-			return false
-		}
-		newEnd, err := time.Parse(format, e.Date+" "+e.End)
 		if err != nil {
 			return false
 		}
