@@ -90,10 +90,9 @@ func (s *Server) GetEvents(context.Context, *emptypb.Empty) (*pb.Events, error) 
 	}
 	qrpcEventes := pb.Events{}
 
-	var evt storage.Event
 	for _, e := range storageEvts {
-		evt = e
-		qrpcEventes.Events = append(qrpcEventes.Events, s.convertToGrpcEvent(&evt))
+		e := e
+		qrpcEventes.Events = append(qrpcEventes.Events, s.convertToGrpcEvent(&e))
 	}
 	return &qrpcEventes, nil
 }
