@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -22,35 +23,17 @@ type Storage interface {
 	Close()
 }
 
+type Server interface {
+	Start(context.Context) error
+	Stop(context.Context) error
+}
+
 func New(logger *logger.Logger, storage Storage) *App {
 	return &App{log: logger, storage: storage}
 }
 
 func (a *App) CreateEvent(e storage.Event) error {
-	evt, err := a.GetEvent(e.UUID)
-	if err != nil {
-		return a.storage.CreateEvent(e)
-	}
-	format := "2006-01-02 15:04:00"
-	begin, err := time.Parse(format, evt.Date+" "+evt.Begin)
-	if err != nil {
-		return err
-	}
-	end, err := time.Parse(format, evt.Date+" "+evt.End)
-	if err != nil {
-		return err
-	}
-	newBegin, err := time.Parse(format, e.Date+" "+e.Begin)
-	if err != nil {
-		return err
-	}
-	newEnd, err := time.Parse(format, e.Date+" "+e.End)
-	if err != nil {
-		return err
-	}
-
-	if ((newBegin.After(begin) || newBegin.Equal(begin)) && (newBegin.Before(end) || newBegin.Equal(end))) ||
-		((newEnd.After(begin) || newEnd.Equal(begin)) && (newEnd.Before(end) || newEnd.Equal(end))) {
+	if a.isBusyDatetime(e) {
 		return fmt.Errorf("datetime is busy")
 	}
 	return a.storage.CreateEvent(e)
@@ -61,6 +44,9 @@ func (a *App) GetEvent(id string) (storage.Event, error) {
 }
 
 func (a *App) UpdateEvent(id string, e storage.Event) error {
+	if a.isBusyDatetime(e) {
+		return fmt.Errorf("datetime is busy")
+	}
 	return a.storage.UpdateEvent(id, e)
 }
 
@@ -70,4 +56,44 @@ func (a *App) DeleteEvent(id string) error {
 
 func (a *App) Events() ([]storage.Event, error) {
 	return a.storage.Events()
+}
+
+func (a *App) isBusyDatetime(e storage.Event) bool {
+	var err error
+	defer func() {
+		if err != nil {
+			a.log.Error("faled to handle event: " + err.Error())
+		}
+	}()
+	events, err := a.Events()
+	if err != nil {
+		return false
+	}
+	const format = "2006-01-02 15:04:00"
+	for _, evt := range events {
+		if evt.Date != e.Date || evt.UUID == e.UUID {
+			continue
+		}
+		begin, err := time.Parse(format, evt.Date+" "+evt.Begin)
+		if err != nil {
+			return false
+		}
+		end, err := time.Parse(format, evt.Date+" "+evt.End)
+		if err != nil {
+			return false
+		}
+		newBegin, err := time.Parse(format, e.Date+" "+e.Begin)
+		if err != nil {
+			return false
+		}
+		newEnd, err := time.Parse(format, e.Date+" "+e.End)
+		if err != nil {
+			return false
+		}
+		if ((newBegin.After(begin) || newBegin.Equal(begin)) && (newBegin.Before(end) || newBegin.Equal(end))) ||
+			((newEnd.After(begin) || newEnd.Equal(begin)) && (newEnd.Before(end) || newEnd.Equal(end))) {
+			return true
+		}
+	}
+	return false
 }

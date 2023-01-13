@@ -13,8 +13,9 @@ type Config struct {
 }
 
 type ServerConf struct {
-	Host string `yaml:"host"`
-	Port string `yaml:"port"`
+	Proto string `yaml:"proto"`
+	Host  string `yaml:"host"`
+	Port  string `yaml:"port"`
 }
 
 type LoggerConf struct {

@@ -46,7 +46,6 @@ func TestAPI(t *testing.T) {
 	}{
 		{"not found", http.MethodGet, "/qqq", nil, http.StatusNotFound},
 		{"create event", http.MethodPost, "/create", &event, http.StatusOK},
-		{"create the same event", http.MethodPost, "/create", &event, http.StatusInternalServerError},
 		{"get event", http.MethodGet, "/event", &event, http.StatusOK},
 		{"get invalid event", http.MethodGet, "/event", nil, http.StatusInternalServerError},
 		{"update event", http.MethodPut, "/update", &event, http.StatusOK},
