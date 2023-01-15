@@ -15,3 +15,7 @@ type Event struct {
 	Begin string `json:"start"`
 	End   string `json:"end"`
 }
+
+type Events struct {
+	Evets []Event `json:"events"`
+}

@@ -1,9 +1,12 @@
 log:
   level: debug
 server:
-  proto: grpc
-  host: localhost
-  port: 50051
+  grpc:
+    host: localhost
+    port: 50051
+  http: 
+    host: localhost
+    port: 8080
 database:
   type: memory
   sql:

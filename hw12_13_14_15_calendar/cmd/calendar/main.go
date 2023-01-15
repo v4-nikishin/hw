@@ -60,31 +60,36 @@ func main() {
 
 	calendar := app.New(logg, repo)
 
-	var server app.Server
-	if cfg.Server.Proto == "grpc" {
-		s := grpc.NewServer(grpc.ChainUnaryInterceptor())
-		server = internalgrpc.NewServer(cfg.Server, logg, s, calendar)
-		pb.RegisterCalendarServer(s, server.(pb.CalendarServer))
-	} else {
-		server = internalhttp.NewServer(cfg.Server, logg, calendar)
-	}
-
+	s := grpc.NewServer(grpc.ChainUnaryInterceptor())
+	grpcServer := internalgrpc.NewServer(cfg.Server.GRPC, logg, s, calendar)
+	pb.RegisterCalendarServer(s, grpcServer)
 	go func() {
-		<-ctx.Done()
-
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-		defer cancel()
-
-		if err := server.Stop(ctx); err != nil {
-			logg.Error("failed to stop " + cfg.Server.Proto + " server: " + err.Error())
+		if err := grpcServer.Start(ctx); err != nil {
+			logg.Error("failed to start grpc server: " + err.Error())
+			cancel()
+		}
+	}()
+	httpServer := internalhttp.NewServer(cfg.Server.HTTP, logg, calendar)
+	go func() {
+		if err := httpServer.Start(ctx); err != nil {
+			logg.Error("failed to start http server: " + err.Error())
+			cancel()
 		}
 	}()
 
 	logg.Info("calendar is running...")
 
-	if err := server.Start(ctx); err != nil {
-		logg.Error("failed to start " + cfg.Server.Proto + " server: " + err.Error())
-		cancel()
-		os.Exit(1) //nolint:gocritic
+	<-ctx.Done()
+
+	ctx, cancel = context.WithTimeout(context.Background(), time.Second*3)
+	defer cancel()
+
+	if err := grpcServer.Stop(ctx); err != nil {
+		logg.Error("failed to stop grpc server: " + err.Error())
 	}
+	if err := httpServer.Stop(ctx); err != nil {
+		logg.Error("failed to stop http server: " + err.Error())
+	}
+
+	logg.Info("...calendar is stopped")
 }

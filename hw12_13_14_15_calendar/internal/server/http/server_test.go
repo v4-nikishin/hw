@@ -29,7 +29,7 @@ func TestAPI(t *testing.T) {
 	logg := logger.New(config.LoggerConf{Level: "debug"}, os.Stdout)
 	repo := memorystorage.New()
 	calendar := app.New(logg, repo)
-	server := NewServer(config.ServerConf{Host: "localhost", Port: "8080"}, logg, calendar)
+	server := NewServer(config.ServerHTTP{Host: "localhost", Port: "8080"}, logg, calendar)
 
 	ctx := context.Background()
 	go func() {
@@ -51,6 +51,7 @@ func TestAPI(t *testing.T) {
 		{"update event", http.MethodPut, "/update", &event, http.StatusOK},
 		{"invalid method", http.MethodPut, "/list", nil, http.StatusMethodNotAllowed},
 		{"list events", http.MethodGet, "/list", nil, http.StatusOK},
+		{"get events on date", http.MethodGet, "/events_on_date", &event, http.StatusOK},
 		{"delete event", http.MethodDelete, "/delete", &event, http.StatusOK},
 	}
 

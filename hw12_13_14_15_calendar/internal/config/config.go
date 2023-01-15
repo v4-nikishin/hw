@@ -13,9 +13,18 @@ type Config struct {
 }
 
 type ServerConf struct {
-	Proto string `yaml:"proto"`
-	Host  string `yaml:"host"`
-	Port  string `yaml:"port"`
+	GRPC ServerGRPC `yaml:"grpc"`
+	HTTP ServerHTTP `yaml:"http"`
+}
+
+type ServerGRPC struct {
+	Host string `yaml:"host"`
+	Port string `yaml:"port"`
+}
+
+type ServerHTTP struct {
+	Host string `yaml:"host"`
+	Port string `yaml:"port"`
 }
 
 type LoggerConf struct {

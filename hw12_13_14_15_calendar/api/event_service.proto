@@ -6,11 +6,12 @@ option go_package = "./;pb";
 import "google/protobuf/empty.proto";
 
 service Calendar {
-  rpc CreateEvent (Event) returns (google.protobuf.Empty) {}
-  rpc GetEvent(EventId) returns (Event) {}
-  rpc UpdateEvent(Event) returns (google.protobuf.Empty) {}
-  rpc DeleteEvent(EventId) returns (google.protobuf.Empty) {}
-  rpc GetEvents(google.protobuf.Empty) returns (Events) {}
+  rpc CreateEvent (Event) returns (google.protobuf.Empty);
+  rpc GetEvent(EventId) returns (Event);
+  rpc UpdateEvent(Event) returns (google.protobuf.Empty);
+  rpc DeleteEvent(EventId) returns (google.protobuf.Empty);
+  rpc GetEvents(google.protobuf.Empty) returns (Events);
+  rpc GetEventsOnDate(Date) returns (Events);
 }
 
 message Event {
@@ -28,4 +29,8 @@ message EventId {
 
 message Events {
   repeated Event events = 1;
+}
+
+message Date {
+	string date = 1;
 }

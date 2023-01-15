@@ -60,5 +60,17 @@ func (s *Storage) Events() ([]storage.Event, error) {
 	return events, nil
 }
 
+func (s *Storage) EventsOnDate(date string) ([]storage.Event, error) {
+	events := []storage.Event{}
+	s.mu.RLock()
+	for _, e := range s.events {
+		if e.Date == date {
+			events = append(events, *e)
+		}
+	}
+	s.mu.RUnlock()
+	return events, nil
+}
+
 func (s *Storage) Close() {
 }

@@ -10,7 +10,7 @@ import (
 func TestStorage(t *testing.T) {
 	s := New()
 	t.Run("check create", func(t *testing.T) {
-		s.CreateEvent(storage.Event{UUID: "1", Title: "1"})
+		s.CreateEvent(storage.Event{UUID: "1", Title: "1", Date: "2023-01-15"})
 		require.Equal(t, s.events["1"].Title, "1")
 		require.Equal(t, s.events["1"].UUID, "1")
 	})
@@ -31,6 +31,11 @@ func TestStorage(t *testing.T) {
 	})
 	t.Run("check list", func(t *testing.T) {
 		events, err := s.Events()
+		require.Equal(t, len(events), 1)
+		require.NoError(t, err)
+	})
+	t.Run("get events on date", func(t *testing.T) {
+		events, err := s.EventsOnDate("2023-01-15")
 		require.Equal(t, len(events), 1)
 		require.NoError(t, err)
 	})

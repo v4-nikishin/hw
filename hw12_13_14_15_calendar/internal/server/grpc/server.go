@@ -1,3 +1,4 @@
+//go:generate protoc -I/usr/local/include --proto_path=../../../api --go_out=pb --go-grpc_out=pb event_service.proto
 package internalgrpc
 
 import (
@@ -18,13 +19,13 @@ import (
 type Server struct {
 	pb.UnimplementedCalendarServer
 
-	cfg    config.ServerConf
+	cfg    config.ServerGRPC
 	log    *logger.Logger
 	server *grpc.Server
 	app    *app.App
 }
 
-func NewServer(cfg config.ServerConf, logger *logger.Logger, server *grpc.Server, app *app.App) *Server {
+func NewServer(cfg config.ServerGRPC, logger *logger.Logger, server *grpc.Server, app *app.App) *Server {
 	return &Server{cfg: cfg, log: logger, server: server, app: app}
 }
 
@@ -90,10 +91,21 @@ func (s *Server) GetEvents(context.Context, *emptypb.Empty) (*pb.Events, error) 
 	}
 	qrpcEventes := pb.Events{}
 
-	//nolint:typecheck
 	for _, e := range storageEvts {
-		e := e
-		qrpcEventes.Events = append(qrpcEventes.Events, s.convertToGrpcEvent(&e))
+		qrpcEventes.Events = append(qrpcEventes.Events, s.convertToGrpcEvent(&e)) //nolint:gosec
+	}
+	return &qrpcEventes, nil
+}
+
+func (s *Server) GetEventsOnDate(ctx context.Context, d *pb.Date) (*pb.Events, error) {
+	storageEvts, err := s.app.EventsOnDate(d.GetDate())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	qrpcEventes := pb.Events{}
+
+	for _, e := range storageEvts {
+		qrpcEventes.Events = append(qrpcEventes.Events, s.convertToGrpcEvent(&e)) //nolint:gosec
 	}
 	return &qrpcEventes, nil
 }
@@ -115,7 +127,7 @@ func (s *Server) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	s.log.Info("starting grpc server on " + lsn.Addr().String())
+	s.log.Info("grpc server is started on address: " + lsn.Addr().String())
 	if err := s.server.Serve(lsn); err != nil {
 		return err
 	}
@@ -124,6 +136,6 @@ func (s *Server) Start(ctx context.Context) error {
 
 func (s *Server) Stop(ctx context.Context) error {
 	s.server.GracefulStop()
-	s.log.Info("...calendar is stopped")
+	s.log.Info("...grpc server is  stopped")
 	return nil
 }

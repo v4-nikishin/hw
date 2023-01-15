@@ -35,7 +35,7 @@ func TestAPI(t *testing.T) {
 	calendar := app.New(logg, repo)
 
 	server := grpc.NewServer(grpc.ChainUnaryInterceptor())
-	service := NewServer(config.ServerConf{Host: "localhost", Port: "50051"}, logg, server, calendar)
+	service := NewServer(config.ServerGRPC{Host: "localhost", Port: "50051"}, logg, server, calendar)
 	pb.RegisterCalendarServer(server, service)
 
 	addr := net.JoinHostPort(service.cfg.Host, service.cfg.Port)
@@ -86,6 +86,12 @@ func TestAPI(t *testing.T) {
 	})
 	t.Run("get event list", func(t *testing.T) {
 		e, err := client.GetEvents(context.Background(), &emptypb.Empty{})
+		require.NoError(t, err)
+		require.Equal(t, len(e.GetEvents()), 1)
+	})
+	t.Run("get events on date", func(t *testing.T) {
+		d := pb.Date{Date: event.Date}
+		e, err := client.GetEventsOnDate(context.Background(), &d)
 		require.NoError(t, err)
 		require.Equal(t, len(e.GetEvents()), 1)
 	})

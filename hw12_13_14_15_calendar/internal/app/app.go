@@ -20,6 +20,7 @@ type Storage interface {
 	UpdateEvent(id string, e storage.Event) error
 	DeleteEvent(id string) error
 	Events() ([]storage.Event, error)
+	EventsOnDate(date string) ([]storage.Event, error)
 	Close()
 }
 
@@ -58,6 +59,10 @@ func (a *App) Events() ([]storage.Event, error) {
 	return a.storage.Events()
 }
 
+func (a *App) EventsOnDate(date string) ([]storage.Event, error) {
+	return a.storage.EventsOnDate(date)
+}
+
 func (a *App) isBusyDatetime(e storage.Event) bool {
 	var err error
 	defer func() {
@@ -65,7 +70,7 @@ func (a *App) isBusyDatetime(e storage.Event) bool {
 			a.log.Error("faled to handle event: " + err.Error())
 		}
 	}()
-	events, err := a.Events()
+	events, err := a.EventsOnDate(e.Date)
 	if err != nil {
 		return false
 	}

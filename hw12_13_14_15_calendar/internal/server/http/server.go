@@ -15,19 +15,19 @@ import (
 )
 
 type Server struct {
-	cfg    config.ServerConf
+	cfg    config.ServerHTTP
 	log    *logger.Logger
 	server *http.Server
 	app    *app.App
 }
 
-func NewServer(cfg config.ServerConf, logger *logger.Logger, app *app.App) *Server {
+func NewServer(cfg config.ServerHTTP, logger *logger.Logger, app *app.App) *Server {
 	return &Server{cfg: cfg, log: logger, app: app}
 }
 
 func (s *Server) Start(ctx context.Context) error {
 	addr := net.JoinHostPort(s.cfg.Host, s.cfg.Port)
-	s.log.Info("server started on address: " + addr)
+	s.log.Info("http server is started on address: " + addr)
 	s.server = &http.Server{
 		Addr:         addr,
 		Handler:      loggingMiddleware(s, s.log),
@@ -44,7 +44,7 @@ func (s *Server) Stop(ctx context.Context) error {
 	if err := s.server.Shutdown(ctx); err != nil {
 		return err
 	}
-	s.log.Info("...calendar is stopped")
+	s.log.Info("...http server is stopped")
 	return nil
 }
 
@@ -94,10 +94,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			return
 		}
-		if _, err := s.app.GetEvent(e.UUID); err != nil {
+		e, err := s.app.GetEvent(e.UUID)
+		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			s.log.Error("failed to get events: " + err.Error())
+			return
 		}
+		s.writeEvent(w, &e)
 	case "/update":
 		e, ok := s.fetchEvent(http.MethodPut, &w, r)
 		if !ok {
@@ -111,10 +114,27 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if !s.allowedMethod(http.MethodGet, &w, r) {
 			return
 		}
-		if _, err := s.app.Events(); err != nil {
+		evts, err := s.app.Events()
+		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			s.log.Error("failed to get events" + err.Error())
+			return
 		}
+		s.writeEvents(w, evts)
+	case "/events_on_date":
+		if !s.allowedMethod(http.MethodGet, &w, r) {
+			return
+		}
+		if _, ok := s.fetchEvent(http.MethodGet, &w, r); !ok {
+			return
+		}
+		evts, err := s.app.Events()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			s.log.Error("failed to get events on date" + err.Error())
+			return
+		}
+		s.writeEvents(w, evts)
 	case "/delete":
 		e, ok := s.fetchEvent(http.MethodDelete, &w, r)
 		if !ok {
@@ -127,4 +147,30 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	default:
 		w.WriteHeader(http.StatusNotFound)
 	}
+}
+
+func (s *Server) writeEvent(w http.ResponseWriter, resp *storage.Event) {
+	resBuf, err := json.Marshal(resp)
+	if err != nil {
+		s.log.Error("response marshal error: " + err.Error())
+	}
+	_, err = w.Write(resBuf)
+	if err != nil {
+		s.log.Error("response marshal error: " + err.Error())
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+}
+
+func (s *Server) writeEvents(w http.ResponseWriter, resp []storage.Event) {
+	events := storage.Events{}
+	events.Evets = resp
+	resBuf, err := json.Marshal(events)
+	if err != nil {
+		s.log.Error("response marshal error: " + err.Error())
+	}
+	_, err = w.Write(resBuf)
+	if err != nil {
+		s.log.Error("response marshal error: " + err.Error())
+	}
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 }
