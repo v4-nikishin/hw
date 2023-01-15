@@ -13,6 +13,16 @@ type Config struct {
 }
 
 type ServerConf struct {
+	GRPC ServerGRPC `yaml:"grpc"`
+	HTTP ServerHTTP `yaml:"http"`
+}
+
+type ServerGRPC struct {
+	Host string `yaml:"host"`
+	Port string `yaml:"port"`
+}
+
+type ServerHTTP struct {
 	Host string `yaml:"host"`
 	Port string `yaml:"port"`
 }

@@ -41,8 +41,8 @@ func (s *Storage) Close() {
 }
 
 func (s *Storage) CreateEvent(e storage.Event) error {
-	query := "insert into events (uuid, title) values ($1, $2)"
-	_, err := s.db.ExecContext(s.ctx, query, e.UUID, e.Title)
+	query := "insert into events (uuid, title, user, date, begin, end) values ($1, $2, $3, $4, $5, $6)"
+	_, err := s.db.ExecContext(s.ctx, query, e.UUID, e.Title, e.User, e.Date, e.Begin, e.End)
 	if err != nil {
 		return fmt.Errorf("cannot add event %w", err)
 	}
@@ -55,7 +55,7 @@ func (s *Storage) GetEvent(uuid string) (storage.Event, error) {
 
 	e := storage.Event{}
 
-	err := row.Scan(&e.UUID, &e.Title)
+	err := row.Scan(&e.UUID, &e.Title, &e.User, &e.Date, &e.Begin, &e.End)
 	if err == sql.ErrNoRows {
 		return e, fmt.Errorf("cannot find event %w", err)
 	} else if err != nil {
@@ -64,9 +64,9 @@ func (s *Storage) GetEvent(uuid string) (storage.Event, error) {
 	return e, nil
 }
 
-func (s *Storage) UpdateEvent(uuid string, title string) error {
-	query := "update events set title = $1 where uuid = $2"
-	_, err := s.db.ExecContext(s.ctx, query, title, uuid)
+func (s *Storage) UpdateEvent(uuid string, e storage.Event) error {
+	query := "update events set title=$1, date=$2, begin=$3, end=$4 where uuid = $5"
+	_, err := s.db.ExecContext(s.ctx, query, e.Title, e.Date, e.Begin, e.End, uuid)
 	if err != nil {
 		return fmt.Errorf("cannot update event %w", err)
 	}
@@ -83,7 +83,8 @@ func (s *Storage) DeleteEvent(id string) error {
 }
 
 func (s *Storage) Events() ([]storage.Event, error) {
-	rows, err := s.db.QueryContext(s.ctx, `select uuid, title from events`)
+	query := "select uuid, title, user, date, begin, end from events"
+	rows, err := s.db.QueryContext(s.ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("cannot select: %w", err)
 	}
@@ -94,8 +95,39 @@ func (s *Storage) Events() ([]storage.Event, error) {
 	for rows.Next() {
 		var e storage.Event
 		if err := rows.Scan(
-			&e.Title,
 			&e.UUID,
+			&e.Title,
+			&e.User,
+			&e.Date,
+			&e.Begin,
+			&e.End,
+		); err != nil {
+			return nil, fmt.Errorf("cannot scan: %w", err)
+		}
+		events = append(events, e)
+	}
+	return events, rows.Err()
+}
+
+func (s *Storage) EventsOnDate(date string) ([]storage.Event, error) {
+	query := "select uuid, title, user, date, begin, end from events where date = $1"
+	rows, err := s.db.QueryContext(s.ctx, query, date)
+	if err != nil {
+		return nil, fmt.Errorf("cannot select: %w", err)
+	}
+	defer rows.Close()
+
+	var events []storage.Event
+
+	for rows.Next() {
+		var e storage.Event
+		if err := rows.Scan(
+			&e.UUID,
+			&e.Title,
+			&e.User,
+			&e.Date,
+			&e.Begin,
+			&e.End,
 		); err != nil {
 			return nil, fmt.Errorf("cannot scan: %w", err)
 		}

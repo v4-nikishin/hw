@@ -1,6 +1,7 @@
 package memorystorage
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/storage"
@@ -24,16 +25,19 @@ func (s *Storage) CreateEvent(e storage.Event) error {
 
 func (s *Storage) GetEvent(id string) (storage.Event, error) {
 	s.mu.RLock()
-	e := s.events[id]
-	s.mu.RUnlock()
+	defer s.mu.RUnlock()
+	e, ok := s.events[id]
+	if !ok {
+		return storage.Event{}, fmt.Errorf("event not found %s", id)
+	}
 	return *e, nil
 }
 
-func (s *Storage) UpdateEvent(id string, title string) error {
+func (s *Storage) UpdateEvent(id string, evt storage.Event) error {
 	s.mu.RLock()
 	e, ok := s.events[id]
 	if ok {
-		e.Title = title
+		e.Title = evt.Title
 	}
 	s.mu.RUnlock()
 	return nil
@@ -51,6 +55,18 @@ func (s *Storage) Events() ([]storage.Event, error) {
 	s.mu.RLock()
 	for _, e := range s.events {
 		events = append(events, *e)
+	}
+	s.mu.RUnlock()
+	return events, nil
+}
+
+func (s *Storage) EventsOnDate(date string) ([]storage.Event, error) {
+	events := []storage.Event{}
+	s.mu.RLock()
+	for _, e := range s.events {
+		if e.Date == date {
+			events = append(events, *e)
+		}
 	}
 	s.mu.RUnlock()
 	return events, nil
