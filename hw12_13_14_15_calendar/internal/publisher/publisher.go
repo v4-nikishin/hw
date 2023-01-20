@@ -7,7 +7,6 @@ import (
 	"github.com/streadway/amqp"
 	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/logger"
 	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/server/grpc/pb"
-
 	"gopkg.in/square/go-jose.v2/json"
 )
 
@@ -15,12 +14,12 @@ type Publisher struct {
 	log             *logger.Logger
 	publishedEvents map[string]struct{}
 
-	uri          string // = flag.String("uri", "amqp://guest:guest@localhost:5672/", "AMQP URI")
-	exchange     string //= flag.String("exchange", "test-exchange", "Durable AMQP exchange name")
-	exchangeType string //= flag.String("exchange-type", "direct", "Exchange type - direct|fanout|topic|x-custom")
-	routingKey   string // = flag.String("key", "test-key", "AMQP routing key")
-	body         string //= flag.String("body", "foobar", "Body of message")
-	reliable     bool   //= flag.Bool("reliable", true, "Wait for the publisher confirmation before exiting")
+	uri          string // AMQP URI
+	exchange     string // Durable AMQP exchange name
+	exchangeType string // Exchange type - direct|fanout|topic|x-custom
+	routingKey   string // AMQP routing key
+	body         string // Body of message
+	reliable     bool   // Wait for the publisher confirmation before exiting
 }
 
 func New(logger *logger.Logger) *Publisher {
@@ -81,14 +80,14 @@ func (p *Publisher) publish() error {
 	p.log.Info(fmt.Sprintf("dialing %q", p.uri))
 	connection, err := amqp.Dial(p.uri)
 	if err != nil {
-		return fmt.Errorf("dial: %s", err)
+		return fmt.Errorf("dial: %w", err)
 	}
 	defer connection.Close()
 
 	p.log.Info("got Connection, getting Channel")
 	channel, err := connection.Channel()
 	if err != nil {
-		return fmt.Errorf("channel: %s", err)
+		return fmt.Errorf("channel: %w", err)
 	}
 
 	p.log.Info(fmt.Sprintf("got Channel, declaring %q Exchange (%q)", p.exchangeType, p.exchange))
@@ -101,7 +100,7 @@ func (p *Publisher) publish() error {
 		false,          // noWait
 		nil,            // arguments
 	); err != nil {
-		return fmt.Errorf("exchange Declare: %s", err)
+		return fmt.Errorf("exchange Declare: %w", err)
 	}
 
 	// Reliable publisher confirms require confirm.select support from the
@@ -109,7 +108,7 @@ func (p *Publisher) publish() error {
 	if p.reliable {
 		p.log.Info("enabling publishing confirms.")
 		if err := channel.Confirm(false); err != nil {
-			return fmt.Errorf("channel could not be put into confirm mode: %s", err)
+			return fmt.Errorf("channel could not be put into confirm mode: %w", err)
 		}
 
 		confirms := channel.NotifyPublish(make(chan amqp.Confirmation, 1))
@@ -133,7 +132,7 @@ func (p *Publisher) publish() error {
 			// a bunch of application/implementation-specific fields
 		},
 	); err != nil {
-		return fmt.Errorf("exchange Publish: %s", err)
+		return fmt.Errorf("exchange Publish: %w", err)
 	}
 
 	return nil

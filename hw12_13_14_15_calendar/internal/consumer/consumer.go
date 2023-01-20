@@ -15,13 +15,13 @@ type Consumer struct {
 	channel *amqp.Channel
 	done    chan error
 
-	uri          string        //= flag.String("uri", "amqp://guest:guest@localhost:5672/", "AMQP URI")
-	exchange     string        //= flag.String("exchange", "test-exchange", "Durable, non-auto-deleted AMQP exchange name")
-	exchangeType string        //= flag.String("exchange-type", "direct", "Exchange type - direct|fanout|topic|x-custom")
-	queue        string        //= flag.String("queue", "test-queue", "Ephemeral AMQP queue name")
-	bindingKey   string        //= flag.String("key", "test-key", "AMQP binding key")
-	consumerTag  string        //= flag.String("consumer-tag", "simple-consumer", "AMQP consumer tag (should not be blank)")
-	lifetime     time.Duration //= flag.Duration("lifetime", 5*time.Second, "lifetime of process before shutdown (0s=infinite)")
+	uri          string        // AMQP URI
+	exchange     string        // Durable, non-auto-deleted AMQP exchange name
+	exchangeType string        // Exchange type - direct|fanout|topic|x-custom
+	queue        string        // Ephemeral AMQP queue name
+	bindingKey   string        // AMQP binding key
+	consumerTag  string        // AMQP consumer tag (should not be blank)
+	lifetime     time.Duration // lifetime of process before shutdown (0s=infinite)
 }
 
 func NewConsumer(log *logger.Logger) *Consumer {
@@ -41,13 +41,14 @@ func NewConsumer(log *logger.Logger) *Consumer {
 		lifetime:     0,
 	}
 }
+
 func (c *Consumer) Consume() error {
 	var err error
 
 	c.log.Info(fmt.Sprintf("dialing %q", c.uri))
 	c.conn, err = amqp.Dial(c.uri)
 	if err != nil {
-		return fmt.Errorf("dial: %s", err)
+		return fmt.Errorf("dial: %w", err)
 	}
 
 	go func() {
@@ -57,7 +58,7 @@ func (c *Consumer) Consume() error {
 	c.log.Info("got Connection, getting Channel")
 	c.channel, err = c.conn.Channel()
 	if err != nil {
-		return fmt.Errorf("channel: %s", err)
+		return fmt.Errorf("channel: %w", err)
 	}
 
 	c.log.Info(fmt.Sprintf("got Channel, declaring Exchange (%q)", c.exchange))
@@ -70,7 +71,7 @@ func (c *Consumer) Consume() error {
 		false,          // noWait
 		nil,            // arguments
 	); err != nil {
-		return fmt.Errorf("exchange Declare: %s", err)
+		return fmt.Errorf("exchange Declare: %w", err)
 	}
 
 	c.log.Info(fmt.Sprintf("declared Exchange, declaring Queue %q", c.queue))
@@ -83,7 +84,7 @@ func (c *Consumer) Consume() error {
 		nil,     // arguments
 	)
 	if err != nil {
-		return fmt.Errorf("queue Declare: %s", err)
+		return fmt.Errorf("queue Declare: %w", err)
 	}
 
 	c.log.Info(fmt.Sprintf("declared Queue (%q %d messages, %d consumers), binding to Exchange (key %q)",
@@ -96,7 +97,7 @@ func (c *Consumer) Consume() error {
 		false,        // noWait
 		nil,          // arguments
 	); err != nil {
-		return fmt.Errorf("queue Bind: %s", err)
+		return fmt.Errorf("queue Bind: %w", err)
 	}
 
 	c.log.Info(fmt.Sprintf("Queue bound to Exchange, starting Consume (consumer tag %q)", c.consumerTag))
@@ -110,7 +111,7 @@ func (c *Consumer) Consume() error {
 		nil,           // arguments
 	)
 	if err != nil {
-		return fmt.Errorf("queue consume: %s", err)
+		return fmt.Errorf("queue consume: %w", err)
 	}
 
 	go c.handle(deliveries, c.done)
@@ -121,11 +122,11 @@ func (c *Consumer) Consume() error {
 func (c *Consumer) Shutdown() error {
 	// will close() the deliveries channel
 	if err := c.channel.Cancel(c.consumerTag, true); err != nil {
-		return fmt.Errorf("Consumer cancel failed: %s", err)
+		return fmt.Errorf("Consumer cancel failed: %w", err)
 	}
 
 	if err := c.conn.Close(); err != nil {
-		return fmt.Errorf("AMQP connection close error: %s", err)
+		return fmt.Errorf("AMQP connection close error: %w", err)
 	}
 
 	defer c.log.Info("AMQP shutdown OK")
