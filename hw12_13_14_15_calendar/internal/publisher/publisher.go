@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/streadway/amqp"
+	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/config"
 	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/logger"
 	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/server/grpc/pb"
 	"gopkg.in/square/go-jose.v2/json"
@@ -22,16 +23,16 @@ type Publisher struct {
 	reliable     bool   // Wait for the publisher confirmation before exiting
 }
 
-func New(logger *logger.Logger) *Publisher {
+func New(cfg config.PublisherConf, logger *logger.Logger) *Publisher {
 	return &Publisher{
 		log:             logger,
 		publishedEvents: make(map[string]struct{}),
 
-		uri:          "amqp://guest:guest@localhost:5672/",
-		exchange:     "calendar-exchange",
-		exchangeType: "direct",
-		routingKey:   "calendar-key",
-		reliable:     true,
+		uri:          cfg.URI,
+		exchange:     cfg.Exchange,
+		exchangeType: cfg.ExchangeType,
+		routingKey:   cfg.RoutingKey,
+		reliable:     cfg.Reliable,
 	}
 }
 

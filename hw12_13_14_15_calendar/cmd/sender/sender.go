@@ -28,7 +28,7 @@ func main() {
 		return
 	}
 
-	cfg, err := config.Load(configFile)
+	cfg, err := config.LoadSenderConfig(configFile)
 	if err != nil {
 		fmt.Printf("failed to configure service %s\n", err)
 		os.Exit(1)
@@ -40,7 +40,7 @@ func main() {
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
 
-	c := consumer.NewConsumer(logg)
+	c := consumer.NewConsumer(cfg.Consumer, logg)
 	go func() {
 		err := c.Consume()
 		if err != nil {

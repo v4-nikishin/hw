@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/streadway/amqp"
+	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/config"
 	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/logger"
 )
 
@@ -24,7 +25,7 @@ type Consumer struct {
 	lifetime     time.Duration // lifetime of process before shutdown (0s=infinite)
 }
 
-func NewConsumer(log *logger.Logger) *Consumer {
+func NewConsumer(cfg config.ConsumerConf, log *logger.Logger) *Consumer {
 	return &Consumer{
 		log: log,
 
@@ -32,12 +33,12 @@ func NewConsumer(log *logger.Logger) *Consumer {
 		channel: nil,
 		done:    make(chan error),
 
-		uri:          "amqp://guest:guest@localhost:5672/",
-		exchange:     "calendar-exchange",
-		exchangeType: "direct",
-		queue:        "calendar-queue",
-		bindingKey:   "calendar-key",
-		consumerTag:  "calendar-consumer",
+		uri:          cfg.URI,
+		exchange:     cfg.Exchange,
+		exchangeType: cfg.ExchangeType,
+		queue:        cfg.Queue,
+		bindingKey:   cfg.BindingKey,
+		consumerTag:  cfg.ConsumerTag,
 		lifetime:     0,
 	}
 }

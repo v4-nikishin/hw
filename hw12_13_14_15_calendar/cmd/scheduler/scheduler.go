@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
@@ -33,7 +34,7 @@ func main() {
 		return
 	}
 
-	cfg, err := config.Load(configFile)
+	cfg, err := config.LoadSchedulerConfig(configFile)
 	if err != nil {
 		fmt.Printf("failed to configure service %s\n", err)
 		os.Exit(1)
@@ -41,7 +42,8 @@ func main() {
 
 	logg := logger.New(cfg.Logger, os.Stdout)
 
-	conn, err := grpc.Dial(":50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	addr := net.JoinHostPort(cfg.Server.GRPC.Host, cfg.Server.GRPC.Port)
+	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		logg.Error("failed to dial to grpc server")
 		os.Exit(1)
@@ -52,9 +54,9 @@ func main() {
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
 
-	p := publisher.New(logg)
+	p := publisher.New(cfg.Publisher, logg)
 
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(time.Duration(cfg.Scheduler.CheckPeriod) * time.Second)
 	done := make(chan bool)
 	go func() {
 		for {
