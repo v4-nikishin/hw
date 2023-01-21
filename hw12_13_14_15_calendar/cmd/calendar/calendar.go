@@ -18,20 +18,21 @@ import (
 	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/storage"
 	memorystorage "github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/storage/memory"
 	sqlstorage "github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/storage/sql"
+	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/version"
 	"google.golang.org/grpc"
 )
 
 var configFile string
 
 func init() {
-	flag.StringVar(&configFile, "config", "../../configs/config.yaml", "Path to configuration file")
+	flag.StringVar(&configFile, "config", "../../configs/calendar_config.yaml", "Path to configuration file")
 }
 
 func main() {
 	flag.Parse()
 
 	if flag.Arg(0) == "version" {
-		printVersion()
+		version.PrintVersion()
 		return
 	}
 

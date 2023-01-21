@@ -22,12 +22,12 @@ import (
 
 func TestAPI(t *testing.T) {
 	event := pb.Event{
-		Uuid:  "123e4567-e89b-12d3-a456-426655440000",
+		Uuid:  "123e4567-e89b-12d3-a456-426655440002",
 		Title: "Event title",
 		User:  "Event user",
-		Date:  "2023-01-10",
-		Begin: "20:00:00",
-		End:   "21:30:00",
+		Date:  "2023-01-18",
+		Begin: "18:54:00",
+		End:   "19:00:00",
 	}
 
 	logg := logger.New(config.LoggerConf{Level: "debug"}, os.Stdout)

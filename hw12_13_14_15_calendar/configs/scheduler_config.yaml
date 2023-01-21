@@ -1,0 +1,17 @@
+log:
+  level: debug
+server:
+  grpc:
+    host: localhost
+    port: 50051
+  http: 
+    host: localhost
+    port: 8080
+scheduler:
+  checkPeriod: 1
+publisher:
+  uri: amqp://guest:guest@localhost:5672/
+  exchange:     calendar-exchange
+  exchangeType: direct
+  routingKey:   calendar-key
+  reliable:     true

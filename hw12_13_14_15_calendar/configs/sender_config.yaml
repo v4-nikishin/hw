@@ -1,0 +1,9 @@
+log:
+  level: debug
+consumer:
+  uri:          amqp://guest:guest@localhost:5672/
+  exchange:     calendar-exchange
+  exchangeType: direct
+  queue:        calendar-queue
+  bindingKey:   calendar-key
+  consumerTag:  calendar-consumer

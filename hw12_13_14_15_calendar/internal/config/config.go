@@ -53,5 +53,5 @@ func Load(filePath string) (Config, error) {
 	if err = yaml.Unmarshal(data, &cfg); err != nil {
 		return cfg, err
 	}
-	return cfg, err
+	return cfg, nil
 }
