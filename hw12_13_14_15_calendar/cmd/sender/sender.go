@@ -36,11 +36,21 @@ func main() {
 
 	logg := logger.New(cfg.Logger, os.Stdout)
 
+	c, err := consumer.NewConsumer(cfg.Consumer, logg)
+	if err != nil {
+		logg.Error("failed to create consumer: " + err.Error())
+		os.Exit(1)
+	}
+	defer func() {
+		if err := c.Shutdown(); err != nil {
+			logg.Error("error during consumer shutdown: " + err.Error())
+		}
+	}()
+
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
 
-	c := consumer.NewConsumer(cfg.Consumer, logg)
 	go func() {
 		err := c.Consume()
 		if err != nil {
@@ -52,10 +62,6 @@ func main() {
 	logg.Info("sender is running...")
 
 	<-ctx.Done()
-
-	if err := c.Shutdown(); err != nil {
-		logg.Error("error during consumer shutdown: " + err.Error())
-	}
 
 	logg.Info("...sender is stopped")
 }

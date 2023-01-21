@@ -38,5 +38,5 @@ func LoadSchedulerConfig(filePath string) (SchedulerConfig, error) {
 	if err = yaml.Unmarshal(data, &cfg); err != nil {
 		return cfg, err
 	}
-	return cfg, err
+	return cfg, nil
 }

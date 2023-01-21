@@ -25,8 +25,8 @@ type Consumer struct {
 	lifetime     time.Duration // lifetime of process before shutdown (0s=infinite)
 }
 
-func NewConsumer(cfg config.ConsumerConf, log *logger.Logger) *Consumer {
-	return &Consumer{
+func NewConsumer(cfg config.ConsumerConf, log *logger.Logger) (*Consumer, error) {
+	c := &Consumer{
 		log: log,
 
 		conn:    nil,
@@ -41,15 +41,12 @@ func NewConsumer(cfg config.ConsumerConf, log *logger.Logger) *Consumer {
 		consumerTag:  cfg.ConsumerTag,
 		lifetime:     0,
 	}
-}
-
-func (c *Consumer) Consume() error {
 	var err error
 
 	c.log.Info(fmt.Sprintf("dialing %q", c.uri))
 	c.conn, err = amqp.Dial(c.uri)
 	if err != nil {
-		return fmt.Errorf("dial: %w", err)
+		return nil, fmt.Errorf("dial: %w", err)
 	}
 
 	go func() {
@@ -59,11 +56,15 @@ func (c *Consumer) Consume() error {
 	c.log.Info("got Connection, getting Channel")
 	c.channel, err = c.conn.Channel()
 	if err != nil {
-		return fmt.Errorf("channel: %w", err)
+		return nil, fmt.Errorf("channel: %w", err)
 	}
 
 	c.log.Info(fmt.Sprintf("got Channel, declaring Exchange (%q)", c.exchange))
-	if err = c.channel.ExchangeDeclare(
+	return c, nil
+}
+
+func (c *Consumer) Consume() error {
+	if err := c.channel.ExchangeDeclare(
 		c.exchange,     // name of the exchange
 		c.exchangeType, // type
 		true,           // durable

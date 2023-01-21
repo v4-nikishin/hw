@@ -14,6 +14,8 @@ import (
 type Publisher struct {
 	log             *logger.Logger
 	publishedEvents map[string]struct{}
+	connection      *amqp.Connection
+	channel         *amqp.Channel
 
 	uri          string // AMQP URI
 	exchange     string // Durable AMQP exchange name
@@ -23,8 +25,8 @@ type Publisher struct {
 	reliable     bool   // Wait for the publisher confirmation before exiting
 }
 
-func New(cfg config.PublisherConf, logger *logger.Logger) *Publisher {
-	return &Publisher{
+func New(cfg config.PublisherConf, logger *logger.Logger) (*Publisher, error) {
+	p := &Publisher{
 		log:             logger,
 		publishedEvents: make(map[string]struct{}),
 
@@ -34,65 +36,61 @@ func New(cfg config.PublisherConf, logger *logger.Logger) *Publisher {
 		routingKey:   cfg.RoutingKey,
 		reliable:     cfg.Reliable,
 	}
+
+	var err error
+
+	p.log.Info(fmt.Sprintf("dialing %q", p.uri))
+	p.connection, err = amqp.Dial(p.uri)
+	if err != nil {
+		return nil, fmt.Errorf("dial: %w", err)
+	}
+
+	p.log.Info("got Connection, getting Channel")
+	p.channel, err = p.connection.Channel()
+	if err != nil {
+		return nil, fmt.Errorf("channel: %w", err)
+	}
+	return p, nil
 }
 
-func (p *Publisher) Publish(e *pb.Events) {
+func (p *Publisher) Publish(evt *pb.Event) {
 	const format = "2006-01-02 15:04:00"
-	for _, evt := range e.Events {
-		beginStr := evt.GetDate() + " " + evt.GetBegin()
-		begin, err := time.Parse(format, beginStr)
+	beginStr := fmt.Sprintf("%s %s", evt.GetDate(), evt.GetBegin())
+	begin, err := time.Parse(format, beginStr)
+	if err != nil {
+		p.log.Error("failed to parse date: " + beginStr)
+		return
+	}
+	endStr := fmt.Sprintf("%s %s", evt.GetDate(), evt.GetEnd())
+	end, err := time.Parse(format, endStr)
+	if err != nil {
+		p.log.Error("failed to parse date: " + endStr)
+		return
+	}
+	if _, ok := p.publishedEvents[evt.Uuid]; ok {
+		return
+	}
+	now := time.Now().UTC()
+	if (now.After(begin) || now.Equal(begin)) && (now.Before(end) || now.Equal(end)) {
+		fmt.Printf("Event: %v\n", evt)
+		buf, err := json.Marshal(evt)
 		if err != nil {
-			p.log.Error("failed to parse date: " + beginStr)
-			continue
+			p.log.Error("failed to marshal event: " + err.Error())
+			return
 		}
-		endStr := evt.GetDate() + " " + evt.GetEnd()
-		end, err := time.Parse(format, endStr)
+		p.body = string(buf)
+		err = p.publish()
 		if err != nil {
-			p.log.Error("failed to parse date: " + endStr)
-			continue
+			p.log.Error("failed to publish event: " + err.Error())
+			return
 		}
-		if _, ok := p.publishedEvents[evt.Uuid]; ok {
-			continue
-		}
-		now := time.Now().UTC()
-		if (now.After(begin) || now.Equal(begin)) && (now.Before(end) || now.Equal(end)) {
-			fmt.Printf("Event: %v\n", evt)
-			buf, err := json.Marshal(evt)
-			if err != nil {
-				p.log.Error("failed to marshal event: " + err.Error())
-				continue
-			}
-			p.body = string(buf)
-			p.publish()
-			if err != nil {
-				p.log.Error("failed to publish event: " + err.Error())
-				continue
-			}
-			p.publishedEvents[evt.Uuid] = struct{}{}
-		}
+		p.publishedEvents[evt.Uuid] = struct{}{}
 	}
 }
 
 func (p *Publisher) publish() error {
-	// This function dials, connects, declares, publishes, and tears down,
-	// all in one go. In a real service, you probably want to maintain a
-	// long-lived connection as state, and publish against that.
-
-	p.log.Info(fmt.Sprintf("dialing %q", p.uri))
-	connection, err := amqp.Dial(p.uri)
-	if err != nil {
-		return fmt.Errorf("dial: %w", err)
-	}
-	defer connection.Close()
-
-	p.log.Info("got Connection, getting Channel")
-	channel, err := connection.Channel()
-	if err != nil {
-		return fmt.Errorf("channel: %w", err)
-	}
-
 	p.log.Info(fmt.Sprintf("got Channel, declaring %q Exchange (%q)", p.exchangeType, p.exchange))
-	if err := channel.ExchangeDeclare(
+	if err := p.channel.ExchangeDeclare(
 		p.exchange,     // name
 		p.exchangeType, // type
 		true,           // durable
@@ -108,17 +106,17 @@ func (p *Publisher) publish() error {
 	// connection.
 	if p.reliable {
 		p.log.Info("enabling publishing confirms.")
-		if err := channel.Confirm(false); err != nil {
+		if err := p.channel.Confirm(false); err != nil {
 			return fmt.Errorf("channel could not be put into confirm mode: %w", err)
 		}
 
-		confirms := channel.NotifyPublish(make(chan amqp.Confirmation, 1))
+		confirms := p.channel.NotifyPublish(make(chan amqp.Confirmation, 1))
 
 		defer p.confirmOne(confirms)
 	}
 
 	p.log.Info(fmt.Sprintf("declared Exchange, publishing %dB body (%q)", len(p.body), p.body))
-	if err = channel.Publish(
+	if err := p.channel.Publish(
 		p.exchange,   // publish to an exchange
 		p.routingKey, // routing to 0 or more queues
 		false,        // mandatory
@@ -149,5 +147,11 @@ func (p *Publisher) confirmOne(confirms <-chan amqp.Confirmation) {
 		p.log.Info(fmt.Sprintf("confirmed delivery with delivery tag: %d", confirmed.DeliveryTag))
 	} else {
 		p.log.Error(fmt.Sprintf("failed delivery of delivery tag: %d", confirmed.DeliveryTag))
+	}
+}
+
+func (p *Publisher) Close() {
+	if err := p.connection.Close(); err != nil {
+		p.log.Error("failed to close connection: " + err.Error())
 	}
 }

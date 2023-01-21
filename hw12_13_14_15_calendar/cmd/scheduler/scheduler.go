@@ -50,18 +50,24 @@ func main() {
 	}
 	client := pb.NewCalendarClient(conn)
 
+	p, err := publisher.New(cfg.Publisher, logg)
+	if err != nil {
+		logg.Error("failed to create publisher: " + err.Error())
+		os.Exit(1)
+	}
+	defer p.Close()
+
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
 
-	p := publisher.New(cfg.Publisher, logg)
-
 	ticker := time.NewTicker(time.Duration(cfg.Scheduler.CheckPeriod) * time.Second)
-	done := make(chan bool)
+	defer ticker.Stop()
+
 	go func() {
 		for {
 			select {
-			case <-done:
+			case <-ctx.Done():
 				return
 			case <-ticker.C:
 				e, err := client.GetEvents(ctx, &emptypb.Empty{})
@@ -69,7 +75,9 @@ func main() {
 					logg.Error("failed to get events")
 					cancel()
 				}
-				p.Publish(e)
+				for _, evt := range e.Events {
+					p.Publish(evt)
+				}
 			}
 		}
 	}()
@@ -77,9 +85,6 @@ func main() {
 	logg.Info("scheduler is running...")
 
 	<-ctx.Done()
-
-	ticker.Stop()
-	done <- true
 
 	logg.Info("...scheduler is stopped")
 }
