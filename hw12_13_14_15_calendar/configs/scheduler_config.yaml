@@ -2,15 +2,15 @@ log:
   level: debug
 server:
   grpc:
-    host: localhost
+    host: calendar
     port: 50051
   http: 
-    host: localhost
-    port: 8080
+    host: calendar
+    port: 8088
 scheduler:
   checkPeriod: 1
 publisher:
-  uri: amqp://guest:guest@localhost:5672/
+  uri: amqp://guest:guest@rabbit:5672/
   exchange:     calendar-exchange
   exchangeType: direct
   routingKey:   calendar-key
