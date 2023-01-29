@@ -58,4 +58,10 @@ up:
 down:
 	docker-compose down
 
+integration-test:
+	docker-compose -f docker-compose-testing.yaml up -d --build
+	sleep 30 || echo "Waiting for prepear environment..."
+	go test ./tests/... -count=1 -v || echo "Integration tests"
+	docker-compose -f docker-compose-testing.yaml down
+
 .PHONY: build run build-img run-img version test lint

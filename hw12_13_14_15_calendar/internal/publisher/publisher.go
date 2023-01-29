@@ -40,7 +40,16 @@ func New(cfg config.PublisherConf, logger *logger.Logger) (*Publisher, error) {
 	var err error
 
 	p.log.Info(fmt.Sprintf("dialing %q", p.uri))
-	p.connection, err = amqp.Dial(p.uri)
+
+	tryNum := 60
+	for i := 0; i < tryNum; i++ {
+		p.connection, err = amqp.Dial(p.uri)
+		if err != nil {
+			p.log.Info("Dialing...")
+			time.Sleep(time.Second)
+			continue
+		}
+	}
 	if err != nil {
 		return nil, fmt.Errorf("dial: %w", err)
 	}
@@ -54,7 +63,7 @@ func New(cfg config.PublisherConf, logger *logger.Logger) (*Publisher, error) {
 }
 
 func (p *Publisher) Publish(evt *pb.Event) {
-	const format = "2006-01-02 15:04:00"
+	const format = "2006-01-02 15:04:05"
 	beginStr := fmt.Sprintf("%s %s", evt.GetDate(), evt.GetBegin())
 	begin, err := time.Parse(format, beginStr)
 	if err != nil {

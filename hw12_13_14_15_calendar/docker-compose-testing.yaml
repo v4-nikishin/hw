@@ -40,17 +40,6 @@ services:
       - calendar
       - rabbit
 
-  sender:
-    build:
-      dockerfile: build/Dockerfile.sender
-    depends_on:
-      - rabbit
-    restart: on-failure
-    environment:
-      SENDER_AMQP_DSN: "amqp://guest:guest@rabbit:5672/"
-    networks:
-      - rabbit
-
   postgres:
     image: postgres:latest
     ports:

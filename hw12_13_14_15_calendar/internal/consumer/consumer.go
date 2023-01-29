@@ -1,16 +1,21 @@
 package consumer
 
 import (
+	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/streadway/amqp"
 	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/config"
 	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/logger"
+	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/storage"
 )
 
 type Consumer struct {
-	log *logger.Logger
+	log        *logger.Logger
+	sentEvents map[string]struct{}
+	mu         sync.RWMutex
 
 	conn    *amqp.Connection
 	channel *amqp.Channel
@@ -27,7 +32,8 @@ type Consumer struct {
 
 func NewConsumer(cfg config.ConsumerConf, log *logger.Logger) (*Consumer, error) {
 	c := &Consumer{
-		log: log,
+		log:        log,
+		sentEvents: make(map[string]struct{}),
 
 		conn:    nil,
 		channel: nil,
@@ -39,12 +45,21 @@ func NewConsumer(cfg config.ConsumerConf, log *logger.Logger) (*Consumer, error)
 		queue:        cfg.Queue,
 		bindingKey:   cfg.BindingKey,
 		consumerTag:  cfg.ConsumerTag,
-		lifetime:     0,
+		lifetime:     time.Duration(cfg.Lifetime * uint64(time.Second)),
 	}
 	var err error
 
 	c.log.Info(fmt.Sprintf("dialing %q", c.uri))
-	c.conn, err = amqp.Dial(c.uri)
+
+	tryNum := 60
+	for i := 0; i < tryNum; i++ {
+		c.conn, err = amqp.Dial(c.uri)
+		if err != nil {
+			c.log.Info("Dialing...")
+			time.Sleep(time.Second)
+			continue
+		}
+	}
 	if err != nil {
 		return nil, fmt.Errorf("dial: %w", err)
 	}
@@ -137,14 +152,39 @@ func (c *Consumer) Shutdown() error {
 	return <-c.done
 }
 
+func (c *Consumer) sendEvent(d amqp.Delivery) error {
+	c.log.Info(fmt.Sprintf(
+		"got %dB delivery: [%v] %q",
+		len(d.Body),
+		d.DeliveryTag,
+		d.Body,
+	))
+	var e storage.Event
+	err := json.Unmarshal(d.Body, &e)
+	if err != nil {
+		return err
+	}
+	c.log.Info("sendEvent: " + e.UUID)
+	c.mu.RLock()
+	c.sentEvents[e.UUID] = struct{}{}
+	c.mu.RUnlock()
+	return nil
+}
+
+func (c *Consumer) IsSentEvent(uuid string) bool {
+	c.log.Info("IsSentEvent: " + uuid)
+	c.mu.RLock()
+	_, ok := c.sentEvents[uuid]
+	c.mu.RUnlock()
+	return ok
+}
+
 func (c *Consumer) handle(deliveries <-chan amqp.Delivery, done chan error) {
 	for d := range deliveries {
-		c.log.Info(fmt.Sprintf(
-			"got %dB delivery: [%v] %q",
-			len(d.Body),
-			d.DeliveryTag,
-			d.Body,
-		))
+		err := c.sendEvent(d)
+		if err != nil {
+			c.log.Error("failed to send event: " + err.Error())
+		}
 		d.Ack(false)
 	}
 	c.log.Info("handle: deliveries channel closed")

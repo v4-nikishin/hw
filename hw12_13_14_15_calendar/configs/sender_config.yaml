@@ -7,3 +7,4 @@ consumer:
   queue:        calendar-queue
   bindingKey:   calendar-key
   consumerTag:  calendar-consumer
+  lifetime:     0

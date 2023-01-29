@@ -74,7 +74,7 @@ func (a *App) isBusyDatetime(e storage.Event) bool {
 	if err != nil {
 		return false
 	}
-	const format = "2006-01-02 15:04:00"
+	const format = "2006-01-02 15:04:05"
 	newBegin, err := time.Parse(format, e.Date+" "+e.Begin)
 	if err != nil {
 		return false
