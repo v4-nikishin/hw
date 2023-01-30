@@ -16,6 +16,7 @@ import (
 	"github.com/v4-nikishin/hw/hw12_13_14_15_calendar/internal/server/grpc/pb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 func TestSendEvent(t *testing.T) {
@@ -71,5 +72,16 @@ func TestSendEvent(t *testing.T) {
 		time.Sleep(time.Duration(conf.Lifetime * uint64(time.Second)))
 
 		require.True(t, c.IsSentEvent(uuid))
+	})
+	t.Run("get event list", func(t *testing.T) {
+		e, err := client.GetEvents(context.Background(), &emptypb.Empty{})
+		require.NoError(t, err)
+		require.Equal(t, len(e.GetEvents()), 1)
+	})
+	t.Run("get events on date", func(t *testing.T) {
+		d := pb.Date{Date: event.Date}
+		e, err := client.GetEventsOnDate(context.Background(), &d)
+		require.NoError(t, err)
+		require.Equal(t, len(e.GetEvents()), 1)
 	})
 }

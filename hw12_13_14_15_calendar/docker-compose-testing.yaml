@@ -11,6 +11,7 @@ networks:
 services:
   calendar:
     build:
+      context: .
       dockerfile: build/Dockerfile.calendar
     depends_on:
       - postgres
@@ -29,6 +30,7 @@ services:
 
   scheduler:
     build:
+      context: .
       dockerfile: build/Dockerfile.scheduler
     depends_on:
       - calendar
