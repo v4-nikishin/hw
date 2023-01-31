@@ -2,11 +2,11 @@ log:
   level: debug
 server:
   grpc:
-    host: localhost
+    host: 
     port: 50051
   http: 
-    host: localhost
-    port: 8080
+    host: 
+    port: 8088
 database:
   type: memory
   sql:

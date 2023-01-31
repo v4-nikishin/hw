@@ -34,7 +34,7 @@ func (s *Server) Start(ctx context.Context) error {
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
-	if err := s.server.ListenAndServe(); err != nil {
+	if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return err
 	}
 	return nil

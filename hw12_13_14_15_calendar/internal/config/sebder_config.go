@@ -18,6 +18,7 @@ type ConsumerConf struct {
 	Queue        string `yaml:"queue"`
 	BindingKey   string `yaml:"bindingKey"`
 	ConsumerTag  string `yaml:"consumerTag"`
+	Lifetime     uint64 `yaml:"lifetime"`
 }
 
 func NewSenderConfig() SenderConfig {

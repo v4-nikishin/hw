@@ -43,9 +43,12 @@ func main() {
 	logg := logger.New(cfg.Logger, os.Stdout)
 
 	addr := net.JoinHostPort(cfg.Server.GRPC.Host, cfg.Server.GRPC.Port)
-	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	logg.Info("trying to connect to grpc server on " + addr)
+
+	ctxT, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	conn, err := grpc.DialContext(ctxT, addr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	if err != nil {
-		logg.Error("failed to dial to grpc server")
+		logg.Error("failed to dial to grpc server: " + err.Error())
 		os.Exit(1)
 	}
 	client := pb.NewCalendarClient(conn)
@@ -74,6 +77,7 @@ func main() {
 				if err != nil {
 					logg.Error("failed to get events")
 					cancel()
+					return
 				}
 				for _, evt := range e.Events {
 					p.Publish(evt)
